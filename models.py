@@ -12,11 +12,10 @@ class MLP(nn.Module):
 	"""
 	def __init__(self, hiddens, output, config):
 		super(MLP, self).__init__()
-		self.num_condition_neurons = config['num_condition_neurons']
-		self.W1 = nn.Linear(784+self.num_condition_neurons, hiddens)    
+		self.W1 = nn.Linear(784, hiddens)    
 		self.relu = nn.ReLU(inplace=True)
 		self.W2 = nn.Linear(hiddens, hiddens)
-		self.W3 = nn.Linear(hiddens, output)
+		self.W3 = nn.Linear(hiddens, 10)
 		self.dropout_p = config['dropout']
 
 	def forward(self, x, task_id=None):
@@ -54,7 +53,7 @@ class GatedMLP(nn.Module):
 		return out
 
 
-
+		
 def conv3x3(in_planes, out_planes, stride=1):
 	" 3x3 convolution with padding "
 	return nn.Conv2d(in_planes, out_planes, kernel_size=3, stride=stride, padding=1, bias=False)
