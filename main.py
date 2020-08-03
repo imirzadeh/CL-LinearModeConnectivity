@@ -285,14 +285,13 @@ def connect(chekpoint):
 	for epoch in range(5):
 		s = 0
 		print('*********** epoch {} ***********'.format(epoch+1))
-		for t in np.arange(0.0, 1.01, 0.01):
+		for t in np.arange(0.0, 1.01, 0.05):
 			s += 1
 			phi = Bezier_curve(t, theta, w1, w2)
 			assign_weights(m, phi)
 			train_single_epoch(m, optimizer, train_loader, criterion, 1)
 			metrics = eval_single_epoch(m, val_loader, criterion, 1)
 			print(round(t,2), metrics)
-
 
 
 
@@ -306,11 +305,11 @@ def eval(checkpoint):
 
 if __name__ == "__main__":
 	# run()
-	checkpoint = 1
+	# checkpoint = 1
 	# run(checkpoint)
 	# connect(checkpoint)
 	# run(checkpoint)
-	plot_connection(checkpoint)
+	# plot_connection(checkpoint)
 	# eval(checkpoint)
 	# run(checkpoint)
 	# multitask_run(checkpoint)

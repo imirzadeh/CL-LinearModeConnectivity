@@ -10,22 +10,22 @@ class MLP(nn.Module):
 	"""
 	Two layer MLP for MNIST benchmarks.
 	"""
-	def __init__(self, hiddens, output, config):
+	def __init__(self, hiddens, output):
 		super(MLP, self).__init__()
 		self.W1 = nn.Linear(784, hiddens)    
 		self.relu = nn.ReLU(inplace=True)
 		self.W2 = nn.Linear(hiddens, hiddens)
 		self.W3 = nn.Linear(hiddens, 10)
-		self.dropout_p = config['dropout']
+		# self.dropout_p = config['dropout']
 
 	def forward(self, x, task_id=None):
 		# x = x.view(-1, 784 + self.num_condition_neurons)
 		out = self.W1(x)
 		out = self.relu(out)
-		out = nn.functional.dropout(out, p=self.dropout_p)
+		# out = nn.functional.dropout(out, p=self.dropout_p)
 		out = self.W2(out)
 		out = self.relu(out)
-		out = nn.functional.dropout(out, p=self.dropout_p)
+		# out = nn.functional.dropout(out, p=self.dropout_p)
 		out = self.W3(out)
 		return out
 

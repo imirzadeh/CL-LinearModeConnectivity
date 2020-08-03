@@ -10,7 +10,7 @@ from torchvision.datasets import MNIST
 import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
-
+PER_TASK_ROATATION = 45
 
 class RotationTransform:
 	"""
@@ -44,7 +44,7 @@ def get_rotated_mnist(task_id, batch_size):
 	:param batch_size:
 	:return:
 	"""
-	per_task_rotation = 30
+	per_task_rotation = PER_TASK_ROATATION
 	rotation_degree = (task_id - 1)*per_task_rotation
 
 	transforms = torchvision.transforms.Compose([
@@ -58,8 +58,40 @@ def get_rotated_mnist(task_id, batch_size):
 	return train_loader, test_loader
 
 
+def get_subset_rotated_mnist(task_id, batch_size, num_examples=250):
+	per_task_rotation = PER_TASK_ROATATION
+	
+	trains = []
+	tests = []
+	for i in [task_id]:
+		rotation_degree = (i - 1)*per_task_rotation
+		# rotation_degree -= (np.random.random()*per_task_rotation)
+
+		transforms = torchvision.transforms.Compose([
+							RotationTransform(rotation_degree),
+							torchvision.transforms.ToTensor(),
+		])
+		train = MNIST('./data/', train=True, download=True, transform=transforms)
+		test = MNIST('./data/', train=False, download=True, transform=transforms)
+
+		trains.append(train)
+		tests.append(test)
+
+	train_datasets = ConcatDataset(trains)
+	test_datasets = ConcatDataset(tests)
+
+
+	
+	# num_examples = num_examples_per_task * num_tasks
+	sampler = torch.utils.data.RandomSampler(train_datasets, replacement=True, num_samples=num_examples)
+
+	train_loader = torch.utils.data.DataLoader(train_datasets,  batch_size=batch_size, sampler=sampler, shuffle=False, num_workers=4, pin_memory=True)
+	test_loader = torch.utils.data.DataLoader(test_datasets,  batch_size=256, shuffle=False, num_workers=4, pin_memory=True)
+
+	return train_loader, test_loader
+
 def get_multitask_rotated_mnist(num_tasks, batch_size, num_examples_per_task=50000):
-	per_task_rotation = 30
+	per_task_rotation = PER_TASK_ROATATION
 	
 	trains = []
 	tests = []

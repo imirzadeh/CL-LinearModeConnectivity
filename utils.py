@@ -8,6 +8,15 @@ import seaborn as sns
 import matplotlib.pyplot as plt
 import matplotlib.colors as colors
 from matplotlib import rc
+import random
+import string
+
+
+def get_random_string(length):
+    # Random string with the combination of lower and upper case
+    letters = string.ascii_letters
+    result_str = ''.join(random.choice(letters) for i in range(length))
+    return result_str
 
 def save_model(model, path):
 	torch.save(model, path)
@@ -24,6 +33,43 @@ def flatten_params(m, numpy_output=False):
 		return params.cpu().numpy()
 	else:
 		return params
+
+def assign_grads(m, grads):
+	p = [784, 100, 100, 10]
+	idx =[0]
+	for i in range(len(p)-1):
+		last = idx[-1]
+		w_i = last + p[i] * p[i+1]
+		b_i = last + p[i] * p[i+1] + p[i+1]
+		idx.append(w_i)
+		idx.append(b_i)
+
+	# print(idx)
+	W1 = grads[idx[0]:idx[1]].reshape(p[1], p[0])
+	b1 = grads[idx[1]:idx[2]]
+
+	W2 = grads[idx[2]:idx[3]].reshape(p[2], p[1])
+	b2 = grads[idx[3]:idx[4]]
+
+	W3 = grads[idx[4]:idx[5]].reshape(p[3], p[2])
+	b3 = grads[idx[5]:idx[6]]
+
+	W1 = torch.from_numpy(W1)
+	m.W1.weight.grad = W1
+	b1 = torch.from_numpy(b1)
+	m.W1.bias.grad = b1
+
+	W2 = torch.from_numpy(W2)
+	m.W2.weight.grad = W2
+	b2 = torch.from_numpy(b2)
+	m.W2.bias.grad = b2
+
+	W3 = torch.from_numpy(W3)
+	m.W3.weight.grad = W3
+	b3 = torch.from_numpy(b3)
+	m.W3.bias.grad = b3
+	return m
+
 
 def assign_weights(m, params):
 	p = [784, 100, 100, 10]
