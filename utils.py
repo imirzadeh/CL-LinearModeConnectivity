@@ -45,29 +45,29 @@ def assign_grads(m, grads):
 		idx.append(b_i)
 
 	# print(idx)
-	W1 = grads[idx[0]:idx[1]].reshape(p[1], p[0])
+	W1 = grads[idx[0]:idx[1]].view(p[1], p[0])
 	b1 = grads[idx[1]:idx[2]]
 
-	W2 = grads[idx[2]:idx[3]].reshape(p[2], p[1])
+	W2 = grads[idx[2]:idx[3]].view(p[2], p[1])
 	b2 = grads[idx[3]:idx[4]]
 
-	W3 = grads[idx[4]:idx[5]].reshape(p[3], p[2])
+	W3 = grads[idx[4]:idx[5]].view(p[3], p[2])
 	b3 = grads[idx[5]:idx[6]]
 
-	W1 = torch.from_numpy(W1)
-	m.W1.weight.grad = W1
-	b1 = torch.from_numpy(b1)
-	m.W1.bias.grad = b1
+	# W1 = torch.from_numpy(W1)
+	m.W1.weight.grad = W1.clone()
+	# b1 = torch.from_numpy(b1)
+	m.W1.bias.grad = b1.clone()
 
-	W2 = torch.from_numpy(W2)
-	m.W2.weight.grad = W2
-	b2 = torch.from_numpy(b2)
-	m.W2.bias.grad = b2
+	# W2 = torch.from_numpy(W2)
+	m.W2.weight.grad = W2.clone()
+	# b2 = torch.from_numpy(b2)
+	m.W2.bias.grad = b2.clone()
 
-	W3 = torch.from_numpy(W3)
-	m.W3.weight.grad = W3
-	b3 = torch.from_numpy(b3)
-	m.W3.bias.grad = b3
+	# W3 = torch.from_numpy(W3)
+	m.W3.weight.grad = W3.clone()
+	# b3 = torch.from_numpy(b3)
+	m.W3.bias.grad = b3.clone()
 	return m
 
 

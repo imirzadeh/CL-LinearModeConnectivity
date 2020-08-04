@@ -17,13 +17,13 @@ DEVICE = 'cuda' if torch.cuda.is_available() else 'cpu'
 TRIAL_ID =  os.environ.get('NNI_TRIAL_JOB_ID', "UNKNOWN")
 EXP_DIR = './checkpoints/{}'.format(TRIAL_ID)
 
-# config = {'num_tasks': 5, 'per_task_rotation': 10, 'trial': TRIAL_ID,\
-# 		  'memory_size': 200,  'num_lmc_samples': 20, 'lcm_init': 0.4,
-# 		  'lr_inter': 1.25, 'epochs_inter': 50, 'bs_inter': 32, \
-# 		  'lr_intra': 0.1, 'epochs_intra': 5,  'bs_intra': 64,
-# 		 }
+config = {'num_tasks': 5, 'per_task_rotation': 10, 'trial': TRIAL_ID,\
+		  'memory_size': 200,  'num_lmc_samples': 20, 'lcm_init': 0.4,
+		  'lr_inter': 1.25, 'epochs_inter': 3, 'bs_inter': 32, \
+		  'lr_intra': 0.1, 'epochs_intra': 3,  'bs_intra': 64,
+		 }
 
-config = nni.get_next_parameter()
+# config = nni.get_next_parameter()
 config['trial'] = TRIAL_ID
 
 experiment = Experiment(api_key="1UNrcJdirU9MEY0RC3UCU7eAg", \
@@ -168,7 +168,7 @@ def train_task_lmc(task, config):
 		optimizer.zero_grad()
 		grads = get_line_loss(w_prev, flatten_params(model_lmc, numpy_output=True), loader_prev) \
 			  + get_line_loss(w_curr, flatten_params(model_lmc, numpy_output=True), loader_curr)
-		model_lmc = assign_grads(model_lmc.cpu(), grads.cpu().numpy()).to(DEVICE) # NOTE: it has loss.backward() within of itself
+		model_lmc = assign_grads(model_lmc, grads).to(DEVICE) # NOTE: it has loss.backward() within of itself
 		optimizer.step()
 
 	save_model(model_lmc, '{}/t_{}_lcm.pth'.format(EXP_DIR, task))
