@@ -19,7 +19,7 @@ def get_random_string(length):
     return result_str
 
 def save_model(model, path):
-	torch.save(model, path)
+	torch.save(model.cpu(), path)
 
 def load_model(path):
 	model = torch.load(path)

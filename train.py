@@ -94,7 +94,7 @@ def get_all_loaders():
 def train_task_sequentially(task, config):
 	prev_model_name = 'init' if task == 1 else 't_{}_seq'.format(str(task-1))
 	prev_model_path = '{}/{}.pth'.format(EXP_DIR, prev_model_name)
-	model = load_model(prev_model_path)
+	model = load_model(prev_model_path).to(DEVICE)
 	train_loader = loaders['sequential'][task]['train']
 	
 	optimizer = torch.optim.SGD(model.parameters(), lr=config['lr_intra'], momentum=0.8)
@@ -109,13 +109,13 @@ def train_task_sequentially(task, config):
 
 def get_line_loss(start_w, w, loader):
 
-	m = load_model('{}/{}.pth'.format(EXP_DIR, 'init'))
+	m = load_model('{}/{}.pth'.format(EXP_DIR, 'init')).to(DEVICE)
 	total_loss = 0
 	accum_grad = None
 	for t in np.arange(0.0, 1.01, 1.0/float(config['num_lmc_samples'])):
 		grads = []
 		cur_weight = start_w + (w - start_w) * t
-		m = assign_weights(m, cur_weight)
+		m = assign_weights(m, cur_weight).to(DEVICE)
 		current_loss = get_clf_loss(m, loader)
 		current_loss.backward()
 		for param in m.parameters():
@@ -146,14 +146,14 @@ def get_clf_loss(net, loader):
 
 def train_task_lmc(task, config):
 	assert task > 1
-	model_prev = load_model('{}/t_{}_lcm.pth'.format(EXP_DIR, task-1))
-	model_curr = load_model('{}/t_{}_seq.pth'.format(EXP_DIR, task))
+	model_prev = load_model('{}/t_{}_lcm.pth'.format(EXP_DIR, task-1)).to(DEVICE)
+	model_curr = load_model('{}/t_{}_seq.pth'.format(EXP_DIR, task)).to(DEVICE)
 
 	w_prev = flatten_params(model_prev, numpy_output=True)
 	w_curr = flatten_params(model_curr, numpy_output=True)
 
-	model_lmc = load_model('{}/{}.pth'.format(EXP_DIR, 'init'))
-	model_lmc = assign_weights(model_lmc, w_prev + config['lcm_init']*(w_curr-w_prev))
+	model_lmc = load_model('{}/{}.pth'.format(EXP_DIR, 'init')).to(DEVICE)
+	model_lmc = assign_weights(model_lmc, w_prev + config['lcm_init']*(w_curr-w_prev)).to(DEVICE)
 	optimizer = torch.optim.SGD(model_lmc.parameters(), lr=config['lr_inter'], momentum=0.8)
 
 
@@ -166,7 +166,7 @@ def train_task_lmc(task, config):
 		optimizer.zero_grad()
 		grads = get_line_loss(w_prev, flatten_params(model_lmc, numpy_output=True), loader_prev) \
 			  + get_line_loss(w_curr, flatten_params(model_lmc, numpy_output=True), loader_curr)
-		model_lmc = assign_grads(model_lmc, grads.numpy()) # NOTE: it has loss.backward() within of itself
+		model_lmc = assign_grads(model_lmc, grads.numpy()).to(DEVICE) # NOTE: it has loss.backward() within of itself
 		optimizer.step()
 
 	save_model(model_lmc, '{}/t_{}_lcm.pth'.format(EXP_DIR, task))
@@ -179,9 +179,9 @@ def log_comet_metric(exp, name, val, step):
 def plot_loss():
 	criterion = nn.CrossEntropyLoss().to(DEVICE)
 
-	m1 = load_model('{}/{}.pth'.format(EXP_DIR, 't1'))
-	m3 = load_model('{}/{}.pth'.format(EXP_DIR, 't2'))
-	m2 = load_model('{}/{}.pth'.format(EXP_DIR, 't12'))
+	m1 = load_model('{}/{}.pth'.format(EXP_DIR, 't1')).to(DEVICE)
+	m3 = load_model('{}/{}.pth'.format(EXP_DIR, 't2')).to(DEVICE)
+	m2 = load_model('{}/{}.pth'.format(EXP_DIR, 't12')).to(DEVICE)
 
 	w = [flatten_params(p, numpy_output=True) for p in [m1, m2, m3]]
 
@@ -194,7 +194,7 @@ def plot_loss():
 	dy = np.linalg.norm(v)
 	v /= dy
 
-	m = load_model('{}/{}.pth'.format(EXP_DIR, 'init'))
+	m = load_model('{}/{}.pth'.format(EXP_DIR, 'init')).to(DEVICE)
 	m.eval()
 	coords = np.stack(get_xy(p, w[0], u, v) for p in w)
 	print("coords", coords)
@@ -215,7 +215,7 @@ def plot_loss():
 	for i, alpha in enumerate(alphas):
 		for j, beta in enumerate(betas):
 			p = w[0] + alpha * dx * u + beta * dy * v
-			m = assign_weights(m, p)
+			m = assign_weights(m, p).to(DEVICE)
 			err = get_line_loss('t1', flatten_params(m, numpy_output=True), loader).item() + get_line_loss('t2', flatten_params(m, numpy_output=True), loader).item()#eval_single_epoch(m, val_loader, criterion, 1)['loss']
 			c = get_xy(p, w[0], u, v)
 			print(c)
