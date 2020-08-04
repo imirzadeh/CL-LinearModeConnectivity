@@ -1,39 +1,38 @@
+from comet_ml import Experiment
 import torch
 import numpy as np
 import pandas as pd
 import torch.nn as nn
 from models import MLP,GatedMLP,Resnet20
-from data_utils import get_rotated_mnist_tasks, get_multitask_rotated_mnist, get_rotated_mnist, get_subset_rotated_mnist
+from data_utils import get_multitask_rotated_mnist, get_rotated_mnist, get_subset_rotated_mnist
 from utils import save_model, load_model, get_norm_distance, get_cosine_similarity
 from utils import  plot, flatten_params, assign_weights, get_xy, contour_plot, get_random_string, assign_grads
 import uuid
 from pathlib import Path
 
-NUM_TASKS = 3
+
 DEVICE = 'cuda' if torch.cuda.is_available() else 'cpu'
-TRIAL_ID = 'RnmwZ' #get_random_string(5)
+TRIAL_ID =  get_random_string(5) #'fLsIN' #'nhqdz'  #'nhqdz' #'XWQmi' #'jTVgj' #'RnmwZ' 
 EXP_DIR = './checkpoints/{}'.format(TRIAL_ID)
-BATCH_SIZE = 64
-EPOCHS = 15
 
-def train_single_epoch(net, optimizer, loader, criterion, task_id=None):
+config = {'num_tasks': 5, 'per_task_rotation': 10, 'trial': TRIAL_ID,\
+		  'memory_size': 200,  'num_lmc_samples': 20, 'lcm_init': 0.4,
+		  'lr_inter': 1.25, 'epochs_inter': 50, 'bs_inter': 32, \
+		  'lr_intra': 0.1, 'epochs_intra': 5,  'bs_intra': 64,
+		 }
+
+experiment = Experiment(api_key="1UNrcJdirU9MEY0RC3UCU7eAg", \
+						project_name="explore-rotmnist-5-tasks", \
+						workspace="cl-modeconnectivity")
+
+def train_single_epoch(net, optimizer, loader):
+	criterion = nn.CrossEntropyLoss().to(DEVICE)
 	net.train()
-	#task_indicator = [0.0 for i in range(NUM_TASKS)]
-	#task_indicator[task_id-1] = 1.0
-
 	for batch_idx, (data, target) in enumerate(loader):
 		data = data.to(DEVICE).view(-1, 784)
 		target = target.to(DEVICE)
-
-		# print(data.shape)
-		# task_indicator_data = torch.tensor([task_indicator for i in range(target.shape[0])])
-		# data = torch.cat((data, task_indicator_data), 1)
-		
-		# target_task_indicator = torch.tensor([(task_id - 1) for i in range(target.shape[0])], dtype=torch.long)
-		# target = torch.cat((target, target_task_indicator), 1)
-
 		optimizer.zero_grad()
-		pred = net(data, task_id)
+		pred = net(data)
 
 		loss = criterion(pred, target)
 		loss.backward()
@@ -41,29 +40,24 @@ def train_single_epoch(net, optimizer, loader, criterion, task_id=None):
 	return net
 
 
-def eval_single_epoch(net, loader, criterion, task_id=None):
-	
+def eval_single_epoch(net, loader):
 	net.eval()
 	test_loss = 0
 	correct = 0
+	count = 0 # because of sampler
+	criterion = nn.CrossEntropyLoss().to(DEVICE)
 
-	count = 0
 	with torch.no_grad():
 		for data, target in loader:
 			data = data.to(DEVICE).view(-1, 784)
 			target = target.to(DEVICE)
 			count += len(data)
-
-
-			output = net(data, task_id)
+			output = net(data)
 			test_loss += criterion(output, target).item()
 			pred = output.data.max(1, keepdim=True)[1]
-			# if target.shape[0] < 256:
-				# print(pred)
 			correct += pred.eq(target.data.view_as(pred)).sum()
 	test_loss /= count
 	correct = correct.to('cpu')
-	# print(correct.item())
 	avg_acc = 100.0 * float(correct.numpy()) / count
 	return {'accuracy': avg_acc, 'loss': test_loss}
 
@@ -72,89 +66,50 @@ def setup_experiment():
 	Path(EXP_DIR).mkdir(parents=True, exist_ok=True)
 	init_model = MLP(100, 10)
 	save_model(init_model, '{}/init.pth'.format(EXP_DIR))
-
-def get_stage_loaders(stage, train=True):
-	idx = 0 if train == True else 1
-	if stage == 't1':
-		return get_rotated_mnist(1, BATCH_SIZE)[idx]
-	elif stage == 't2':
-		return get_rotated_mnist(2, BATCH_SIZE)[idx]
-	elif stage == 't12':
-		return get_multitask_rotated_mnist(2, BATCH_SIZE, 25000)[idx]
-	else:
-		raise Exception("unknown stage")
-
-def train_stage(stage):
-	stage_dependencies = {'t1': 'init', 't2': 't1', 't12': 't1'}
-	joint_training = True if stage == 't12' else False
-
-	model = load_model('{}/{}.pth'.format(EXP_DIR,stage_dependencies[stage]))
-	train_loader = get_stage_loaders(stage)
-	criterion = nn.CrossEntropyLoss().to(DEVICE)
-	optimizer = torch.optim.SGD(model.parameters(), lr=0.05, momentum=0.8)
-
-	for epoch in range(EPOCHS):
-		model = train_single_epoch(model, optimizer, train_loader, criterion)
-	save_model(model, '{}/{}.pth'.format(EXP_DIR, stage))
-
-def eval_stage(stage):
-	criterion = nn.CrossEntropyLoss().to(DEVICE)
-	eval_dependencies = {'t1': ['t1'], 't2': ['t1', 't2'], 't12': ['t1', 't2']}
-	model = load_model('{}/{}.pth'.format(EXP_DIR, stage))
-	metrics = {}
-	for eval_stage in eval_dependencies[stage]:
-		eval_loader = get_stage_loaders(eval_stage)
-		metrics[eval_stage] = eval_single_epoch(model, eval_loader, criterion)
-	return metrics
+	experiment.log_parameters(config)
 
 
-def compare_distances(stage_1, stage_2):
-	m1 = load_model('{}/{}.pth'.format(EXP_DIR, stage_1))
-	m2 = load_model('{}/{}.pth'.format(EXP_DIR, stage_2))
-	m1.eval()
-	m2.eval()
-	return get_norm_distance(m1, m2).numpy()
+def get_all_loaders():
+	"""
+	Create all required dataset loaders for the CL experience
+	"""
+	loaders = {'sequential': {}, 'multitask': {}, 'subset': {}}
+	for task in range(1, config['num_tasks']+1):
+		loaders['multitask'][task], loaders['sequential'][task], loaders['subset'][task] = {}, {}, {}
 
-def train_stages():
-	for stage in ['t1', 't2', 't12']:
-		print(" --------------- stage {} ------------".format(stage))
-		stage_model = train_stage(stage)
-		eval_stage_result = eval_stage(stage)
-		print(eval_stage_result)
+		seq_loader_train , seq_loader_val = get_rotated_mnist(task, config['bs_inter'], config['per_task_rotation'])
+		mtl_loader_train , mtl_loader_val = get_multitask_rotated_mnist(task, config['bs_intra'], int(config['memory_size']/task), config['per_task_rotation'])
+		sub_loader_train , _ = get_subset_rotated_mnist(task, config['bs_intra'], int(config['memory_size']), config['per_task_rotation'])
+		
+		loaders['multitask'][task]['train'], loaders['multitask'][task]['val'] = mtl_loader_train, mtl_loader_val
+		loaders['sequential'][task]['train'], loaders['sequential'][task]['val'] = seq_loader_train, seq_loader_val
+		loaders['subset'][task]['train'] = sub_loader_train
+	return loaders
 
-def get_stats_after_train_stages():
-	for stage_pairs in [['t1', 't2'], ['t1', 't12'], ['t2', 't12']]:
-		print('dist {} and {} => {}'.format(stage_pairs[0], stage_pairs[1], compare_distances(stage_pairs[0], stage_pairs[1])))
+def train_task_sequentially(task, config):
+	prev_model_name = 'init' if task == 1 else 't_{}_seq'.format(str(task-1))
+	prev_model_path = '{}/{}.pth'.format(EXP_DIR, prev_model_name)
+	model = load_model(prev_model_path)
+	train_loader = loaders['sequential'][task]['train']
+	
+	optimizer = torch.optim.SGD(model.parameters(), lr=config['lr_intra'], momentum=0.8)
 
-def check_mode_connectivity(stage_1, stage_2):
-	print('mode connectivity {} and {}'.format(stage_1, stage_2))
-	m1 = load_model('{}/{}.pth'.format(EXP_DIR, stage_1))
-	m2 = load_model('{}/{}.pth'.format(EXP_DIR, stage_2))
+	for epoch in range(config['epochs_intra']):
+		model = train_single_epoch(model, optimizer, train_loader)
 
-	m1 = flatten_params(m1, numpy_output=True)
-	m2 = flatten_params(m2, numpy_output=True)
-	metrics = []
-	criterion = nn.CrossEntropyLoss().to(DEVICE)
-	eval_loader = get_stage_loaders(stage_1, train=False)
+	save_model(model, '{}/t_{}_seq.pth'.format(EXP_DIR, task))
+	if task == 1:
+		save_model(model, '{}/t_{}_lcm.pth'.format(EXP_DIR, task))
+	return model
+
+def get_line_loss(start_w, w, loader):
+
 	m = load_model('{}/{}.pth'.format(EXP_DIR, 'init'))
-	for t in np.arange(0.0, 1.01, 0.1):
-		cur_weight = m1 + (m2 - m1) * t
-		m = assign_weights(m, cur_weight)
-		eval_metric = eval_single_epoch(m, eval_loader, criterion)
-		metrics.append([t, eval_metric['loss'], eval_metric['accuracy']])
-		print(t, eval_metric)
-	return metrics
-
-def get_line_loss(stage, w, loader):
-	m1 = load_model('{}/{}.pth'.format(EXP_DIR, stage))
-	m1 = flatten_params(m1, numpy_output=True)
-	m = load_model('{}/{}.pth'.format(EXP_DIR, 'init'))
-	# loader = get_multitask_rotated_mnist(2, BATCH_SIZE, 200)[0]
 	total_loss = 0
 	accum_grad = None
-	for t in np.arange(0.0, 1.01, 0.1):
+	for t in np.arange(0.0, 1.01, 1.0/float(config['num_lmc_samples'])):
 		grads = []
-		cur_weight = m1 + (w - m1) * t
+		cur_weight = start_w + (w - start_w) * t
 		m = assign_weights(m, cur_weight)
 		current_loss = get_clf_loss(m, loader)
 		current_loss.backward()
@@ -165,9 +120,6 @@ def get_line_loss(stage, w, loader):
 			accum_grad = grads
 		else:
 			accum_grad += grads
-		# total_loss += current_loss
-		# print(total_loss.item())
-	# return total_loss
 	return accum_grad
 
 
@@ -177,66 +129,47 @@ def get_clf_loss(net, loader):
 	test_loss = 0
 	count = 0
 
-	
 	for data, target in loader:
 			count += len(data)
 			data = data.to(DEVICE).view(-1, 784)
 			target = target.to(DEVICE)
 			output = net(data)
 			test_loss += criterion(output, target)
-	# print("dataset size is => ", count)
 	test_loss /= count
 	return test_loss
 
 
-def printw(w, count=30):
-	print([round(x, 4) for x in w[:count]])
+def train_task_lmc(task, config):
+	assert task > 1
+	model_prev = load_model('{}/t_{}_lcm.pth'.format(EXP_DIR, task-1))
+	model_curr = load_model('{}/t_{}_seq.pth'.format(EXP_DIR, task))
 
-def experimental_approach():
-	m1 = load_model('{}/{}.pth'.format(EXP_DIR, 't1'))
-	m2 = load_model('{}/{}.pth'.format(EXP_DIR, 't2'))
-	goal = load_model('{}/{}.pth'.format(EXP_DIR, 't12'))
+	w_prev = flatten_params(model_prev, numpy_output=True)
+	w_curr = flatten_params(model_curr, numpy_output=True)
 
-	w1 = flatten_params(m1, numpy_output=True)
-	w2 = flatten_params(m2, numpy_output=True)
-
-	m = load_model('{}/{}.pth'.format(EXP_DIR, 'init'))
-	m = assign_weights(m, (w1 + w2)/2.0)
+	model_lmc = load_model('{}/{}.pth'.format(EXP_DIR, 'init'))
+	model_lmc = assign_weights(model_lmc, w_prev + config['lcm_init']*(w_curr-w_prev))
+	optimizer = torch.optim.SGD(model_lmc.parameters(), lr=config['lr_inter'], momentum=0.8)
 
 
+	loader_prev = loaders['multitask'][task]['train']
+	loader_curr = loaders['subset'][task]['train']
 
-	m.train()
-	optimizer = torch.optim.SGD(m.parameters(), lr=0.1, momentum=0.8)
-	criterion = nn.CrossEntropyLoss().to(DEVICE)
-	# criterion = nn.MSELoss().to(DEVICE)
-	loader = get_multitask_rotated_mnist(2, BATCH_SIZE, 200)[0]
-	t1_loader = get_subset_rotated_mnist(1, BATCH_SIZE, 200)[0]
-	t2_loader = get_subset_rotated_mnist(2, BATCH_SIZE, 200)[0]
-	print(get_norm_distance(m, goal))
-	for epoch in range(1, 50):
-		# m = train_joint_model(m, m1, m2, loader)
-		# m = train_single_epoch(m, optimizer, loader, criterion)
+	for epoch in range(config['epochs_inter']):	
+		model_lmc.train()
+
 		optimizer.zero_grad()
-		grads = get_line_loss('t1', flatten_params(m, numpy_output=True), t1_loader) \
-			  + get_line_loss('t2', flatten_params(m, numpy_output=True), t2_loader)
-		assign_grads(m, grads.numpy())
-		# loss = get_clf_loss(m, loader)
-		
-		# loss.backward()
+		grads = get_line_loss(w_prev, flatten_params(model_lmc, numpy_output=True), loader_prev) \
+			  + get_line_loss(w_curr, flatten_params(model_lmc, numpy_output=True), loader_curr)
+		model_lmc = assign_grads(model_lmc, grads.numpy()) # NOTE: it has loss.backward() within of itself
 		optimizer.step()
 
-		print('epoch {}, distance: {}'.format(epoch, get_norm_distance(m, goal)))
+	save_model(model_lmc, '{}/t_{}_lcm.pth'.format(EXP_DIR, task))
+	return model_lmc
 
-		# print('loss', loss.item())
-		print('t1', eval_single_epoch(m, get_rotated_mnist(1, 256)[1], criterion))
-		print('t2', eval_single_epoch(m, get_rotated_mnist(2, 256)[1], criterion))
-		print('norm change', np.linalg.norm(flatten_params(m, numpy_output=True)-((w1+w2)/2.0)))
-		print()
-	# criterion = nn.CrossEntropyLoss().to(DEVICE)
-	# print(eval_single_epoch(m, get_stage_loaders('t1', train=False), criterion))
-	# print(eval_single_epoch(m, get_stage_loaders('t2', train=False), criterion))
-	# print(get_norm_distance(m, goal).numpy())
 
+def log_comet_metric(exp, name, val, step):
+	exp.log_metric(name=name, value=val, step=step)
 
 def plot_loss():
 	criterion = nn.CrossEntropyLoss().to(DEVICE)
@@ -288,17 +221,34 @@ def plot_loss():
 
 
 def main():
+	print(TRIAL_ID)
 	# init and save
-	#setup_experiment()	
+	setup_experiment()	
 
-	# convention:  init = zero init
-	# convention:  t1   = task 1
-	# convention:  t2   = task 2
-	# convention:  t12  = task 1 & task 2 (multitask)
-	# train_stages()
-	# check_mode_connectivity('t2', 't12')
-	experimental_approach()
-	# plot_loss()
+	# convention:  init      =>  initialization
+	# convention:  t_i_seq   =>  task i (sequential)
+	# convention:  t_i_mtl   => task 1 ... i (multitask)
+	# convention:  t_i_lcm   => task 1 ... i (Linear Mode Connectivity)
+	for task in range(1, config['num_tasks']+1):
+		print('---- Task {} (seq) ----'.format(task))
+		seq_model = train_task_sequentially(task, config)
+		for prev_task in range(1, task+1):
+			metrics = eval_single_epoch(seq_model, loaders['sequential'][prev_task]['val'])
+			print(prev_task, metrics)
+			log_comet_metric(experiment, 't_{}_seq_acc'.format(prev_task), metrics['accuracy'], task)
+			log_comet_metric(experiment, 't_{}_seq_loss'.format(prev_task), round(metrics['loss'], 5), task)
+		
+		if task > 1:
+			print('---- Task {} (lcm) ----'.format(task))
+			lmc_model = train_task_lmc(task, config)
+			for prev_task in range(1, task+1):
+				metrics = eval_single_epoch(lmc_model, loaders['sequential'][prev_task]['val'])
+				print(prev_task, metrics)
+				log_comet_metric(experiment, 't_{}_lmc_acc'.format(prev_task), metrics['accuracy'], task)
+				log_comet_metric(experiment, 't_{}_lmc_loss'.format(prev_task), round(metrics['loss'], 5), task)
+	experiment.log_asset_folder(EXP_DIR)
+
+loaders = get_all_loaders()
 
 if __name__ == "__main__":
 	main()
