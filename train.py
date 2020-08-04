@@ -31,6 +31,7 @@ experiment = Experiment(api_key="1UNrcJdirU9MEY0RC3UCU7eAg", \
 						workspace="cl-modeconnectivity")
 
 def train_single_epoch(net, optimizer, loader):
+	net = net.to(DEVICE)
 	criterion = nn.CrossEntropyLoss().to(DEVICE)
 	net.train()
 	for batch_idx, (data, target) in enumerate(loader):
@@ -46,6 +47,7 @@ def train_single_epoch(net, optimizer, loader):
 
 
 def eval_single_epoch(net, loader):
+	net = net.to(DEVICE)
 	net.eval()
 	test_loss = 0
 	correct = 0
