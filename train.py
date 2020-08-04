@@ -168,7 +168,7 @@ def train_task_lmc(task, config):
 		optimizer.zero_grad()
 		grads = get_line_loss(w_prev, flatten_params(model_lmc, numpy_output=True), loader_prev) \
 			  + get_line_loss(w_curr, flatten_params(model_lmc, numpy_output=True), loader_curr)
-		model_lmc = assign_grads(model_lmc, grads.numpy()).to(DEVICE) # NOTE: it has loss.backward() within of itself
+		model_lmc = assign_grads(model_lmc.cpu(), grads.cpu().numpy()).to(DEVICE) # NOTE: it has loss.backward() within of itself
 		optimizer.step()
 
 	save_model(model_lmc, '{}/t_{}_lcm.pth'.format(EXP_DIR, task))
