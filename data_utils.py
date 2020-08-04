@@ -23,7 +23,7 @@ class RotationTransform:
 		return TorchVisionFunc.rotate(x, self.angle, fill=(0,))
 
 
-def get_rotated_mnist_tasks(num_tasks, batch_size):
+def get_rotated_mnist_tasks(num_tasks, batch_size, per_task_rotation=PER_TASK_ROATATION):
 	"""
 	Returns data loaders for all tasks of rotation MNIST dataset.
 	:param num_tasks: number of tasks in the benchmark.
@@ -32,19 +32,19 @@ def get_rotated_mnist_tasks(num_tasks, batch_size):
 	"""
 	datasets = {}
 	for task_id in range(1, num_tasks+1):
-		train_loader, test_loader = get_rotated_mnist(task_id, batch_size)
+		train_loader, test_loader = get_rotated_mnist(task_id, batch_size, per_task_rotation)
 		datasets[task_id] = {'train': train_loader, 'test': test_loader}
 	return datasets
 
 
-def get_rotated_mnist(task_id, batch_size):
+def get_rotated_mnist(task_id, batch_size, per_task_rotation=PER_TASK_ROATATION):
 	"""
 	Returns the dataset for a single task of Rotation MNIST dataset
 	:param task_id:
 	:param batch_size:
 	:return:
 	"""
-	per_task_rotation = PER_TASK_ROATATION
+	# per_task_rotation = PER_TASK_ROATATION
 	rotation_degree = (task_id - 1)*per_task_rotation
 
 	transforms = torchvision.transforms.Compose([
@@ -58,8 +58,8 @@ def get_rotated_mnist(task_id, batch_size):
 	return train_loader, test_loader
 
 
-def get_subset_rotated_mnist(task_id, batch_size, num_examples=250):
-	per_task_rotation = PER_TASK_ROATATION
+def get_subset_rotated_mnist(task_id, batch_size, num_examples=250, per_task_rotation=PER_TASK_ROATATION):
+	# per_task_rotation = PER_TASK_ROATATION
 	
 	trains = []
 	tests = []
@@ -90,7 +90,7 @@ def get_subset_rotated_mnist(task_id, batch_size, num_examples=250):
 
 	return train_loader, test_loader
 
-def get_multitask_rotated_mnist(num_tasks, batch_size, num_examples_per_task=50000):
+def get_multitask_rotated_mnist(num_tasks, batch_size, num_examples_per_task=50000, per_task_rotation=PER_TASK_ROATATION):
 	per_task_rotation = PER_TASK_ROATATION
 	
 	trains = []
@@ -100,8 +100,8 @@ def get_multitask_rotated_mnist(num_tasks, batch_size, num_examples_per_task=500
 		# rotation_degree -= (np.random.random()*per_task_rotation)
 
 		transforms = torchvision.transforms.Compose([
-		RotationTransform(rotation_degree),
-		torchvision.transforms.ToTensor(),
+			RotationTransform(rotation_degree),
+			torchvision.transforms.ToTensor(),
 		])
 		train = MNIST('./data/', train=True, download=True, transform=transforms)
 		test = MNIST('./data/', train=False, download=True, transform=transforms)
