@@ -1,4 +1,6 @@
 from comet_ml import Experiment
+import os
+import nni
 import torch
 import numpy as np
 import pandas as pd
@@ -12,14 +14,17 @@ from pathlib import Path
 
 
 DEVICE = 'cuda' if torch.cuda.is_available() else 'cpu'
-TRIAL_ID =  get_random_string(5) #'fLsIN' #'nhqdz'  #'nhqdz' #'XWQmi' #'jTVgj' #'RnmwZ' 
+TRIAL_ID =  os.environ.get('NNI_TRIAL_JOB_ID', "UNKNOWN")
 EXP_DIR = './checkpoints/{}'.format(TRIAL_ID)
 
-config = {'num_tasks': 5, 'per_task_rotation': 10, 'trial': TRIAL_ID,\
-		  'memory_size': 200,  'num_lmc_samples': 20, 'lcm_init': 0.4,
-		  'lr_inter': 1.25, 'epochs_inter': 50, 'bs_inter': 32, \
-		  'lr_intra': 0.1, 'epochs_intra': 5,  'bs_intra': 64,
-		 }
+# config = {'num_tasks': 5, 'per_task_rotation': 10, 'trial': TRIAL_ID,\
+# 		  'memory_size': 200,  'num_lmc_samples': 20, 'lcm_init': 0.4,
+# 		  'lr_inter': 1.25, 'epochs_inter': 50, 'bs_inter': 32, \
+# 		  'lr_intra': 0.1, 'epochs_intra': 5,  'bs_intra': 64,
+# 		 }
+
+config = nni.get_next_parameter()
+config['trial'] = TRIAL_ID
 
 experiment = Experiment(api_key="1UNrcJdirU9MEY0RC3UCU7eAg", \
 						project_name="explore-rotmnist-5-tasks", \
@@ -247,6 +252,7 @@ def main():
 				log_comet_metric(experiment, 't_{}_lmc_acc'.format(prev_task), metrics['accuracy'], task)
 				log_comet_metric(experiment, 't_{}_lmc_loss'.format(prev_task), round(metrics['loss'], 5), task)
 	experiment.log_asset_folder(EXP_DIR)
+	experiment.end()
 
 loaders = get_all_loaders()
 
