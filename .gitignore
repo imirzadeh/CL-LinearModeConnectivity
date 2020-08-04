@@ -289,3 +289,8 @@ outputs/
 output/
 # End of https://www.gitignore.io/api/vim,macos,python,sublimetext,pycharm+all
 
+./checkpoints
+checkpoints
+*.zip
+*.png
+*.pdf
