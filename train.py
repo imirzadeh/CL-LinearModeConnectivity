@@ -24,9 +24,9 @@ EXP_DIR = './checkpoints/{}'.format(TRIAL_ID)
 # 		 }
 
 config = {'num_tasks': 6, 'per_task_rotation': 10, 'trial': TRIAL_ID,\
-		  'memory_size': 200, 'num_lmc_samples': 10, 'lcm_init': 0.25,
-		  'lr_inter': 0.1, 'epochs_inter': 5, 'bs_inter': 16, \
-		  'lr_intra': 0.1, 'epochs_intra': 5,  'bs_intra': 64,
+		  'memory_size': 200, 'num_lmc_samples': 20, 'lcm_init': 0.25,
+		  'lr_inter': 0.2, 'epochs_inter': 10, 'bs_inter': 32, \
+		  'lr_intra': 0.1, 'epochs_intra': 5,  'bs_intra': 32,
 		 }
 
 # config = nni.get_next_parameter()
@@ -170,13 +170,15 @@ def train_task_lmc(task, config):
 
 	for epoch in range(config['epochs_inter']):	
 		model_lmc.train()
-
 		optimizer.zero_grad()
+
 		grads = get_line_loss(w_prev, flatten_params(model_lmc, numpy_output=True), loader_prev) \
 			  + get_line_loss(w_curr, flatten_params(model_lmc, numpy_output=True), loader_curr)
 		model_lmc = assign_grads(model_lmc, grads).to(DEVICE) # NOTE: it has loss.backward() within of itself
 		optimizer.step()
-
+		for prev_task in range(1, task+1):
+			print("LMC Debug >> epoch {} >> metric {} >> {}".format(epoch+1, prev_task, eval_single_epoch(model_lmc, loaders['sequential'][prev_task]['val'])))
+		print()
 	save_model(model_lmc, '{}/t_{}_lcm.pth'.format(EXP_DIR, task))
 	return model_lmc
 
@@ -184,53 +186,6 @@ def train_task_lmc(task, config):
 def log_comet_metric(exp, name, val, step):
 	exp.log_metric(name=name, value=val, step=step)
 
-def plot_loss():
-	criterion = nn.CrossEntropyLoss().to(DEVICE)
-
-	m1 = load_model('{}/{}.pth'.format(EXP_DIR, 't1')).to(DEVICE)
-	m3 = load_model('{}/{}.pth'.format(EXP_DIR, 't2')).to(DEVICE)
-	m2 = load_model('{}/{}.pth'.format(EXP_DIR, 't12')).to(DEVICE)
-
-	w = [flatten_params(p, numpy_output=True) for p in [m1, m2, m3]]
-
-	u = w[2] - w[0]
-	dx = np.linalg.norm(u)
-	u /= dx
-
-	v = w[1] - w[0]
-	v -= np.dot(u, v) * u
-	dy = np.linalg.norm(v)
-	v /= dy
-
-	m = load_model('{}/{}.pth'.format(EXP_DIR, 'init')).to(DEVICE)
-	m.eval()
-	coords = np.stack(get_xy(p, w[0], u, v) for p in w)
-	print("coords", coords)
-
-	# w0_coord = get_xy(w[0], w[0], u, v)
-	# w1_coord = get_xy(w[1], w[0], u, v)
-	# w2_coor = get_xy(w[2], w[0], u, v)
-
-	G = 10
-	margin = 0.2
-	alphas = np.linspace(0.0 - margin, 1.0 + margin, G)
-	betas = np.linspace(0.0 - margin, 1.0 + margin, G)
-	tr_loss = np.zeros((G, G))
-	grid = np.zeros((G, G, 2))
-
-	loader = get_multitask_rotated_mnist(2, BATCH_SIZE, 200)[0]
-
-	for i, alpha in enumerate(alphas):
-		for j, beta in enumerate(betas):
-			p = w[0] + alpha * dx * u + beta * dy * v
-			m = assign_weights(m, p).to(DEVICE)
-			err = get_line_loss('t1', flatten_params(m, numpy_output=True), loader).item() + get_line_loss('t2', flatten_params(m, numpy_output=True), loader).item()#eval_single_epoch(m, val_loader, criterion, 1)['loss']
-			c = get_xy(p, w[0], u, v)
-			print(c)
-			grid[i, j] = [alpha * dx, beta * dy]
-			tr_loss[i, j] = err
-
-	contour_plot(grid, tr_loss, coords, vmax=5.0, log_alpha=-5.0, N=7)
 
 
 def main():
@@ -259,6 +214,7 @@ def main():
 				print(prev_task, metrics)
 				log_comet_metric(experiment, 't_{}_lmc_acc'.format(prev_task), metrics['accuracy'], task)
 				log_comet_metric(experiment, 't_{}_lmc_loss'.format(prev_task), round(metrics['loss'], 5), task)
+		print()
 	experiment.log_asset_folder(EXP_DIR)
 	experiment.end()
 
