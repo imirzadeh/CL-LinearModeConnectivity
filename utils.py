@@ -10,6 +10,7 @@ import matplotlib.colors as colors
 from matplotlib import rc
 import random
 import string
+HIDDENS = 200
 
 
 def get_random_string(length):
@@ -35,7 +36,7 @@ def flatten_params(m, numpy_output=False):
 		return params
 
 def assign_grads(m, grads):
-	p = [784, 100, 100, 10]
+	p = [784, HIDDENS, HIDDENS, 10]
 	idx =[0]
 	for i in range(len(p)-1):
 		last = idx[-1]
@@ -72,7 +73,7 @@ def assign_grads(m, grads):
 
 
 def assign_weights(m, params):
-	p = [784, 100, 100, 10]
+	p = [784, HIDDENS, HIDDENS, 10]
 	idx =[0]
 	for i in range(len(p)-1):
 		last = idx[-1]

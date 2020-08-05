@@ -12,7 +12,7 @@ from utils import  plot, flatten_params, assign_weights, get_xy, contour_plot, g
 import uuid
 from pathlib import Path
 
-
+HIDDENS = 200
 DEVICE = 'cuda' if torch.cuda.is_available() else 'cpu'
 TRIAL_ID =  os.environ.get('NNI_TRIAL_JOB_ID', get_random_string(5))
 EXP_DIR = './checkpoints/{}'.format(TRIAL_ID)
@@ -23,9 +23,9 @@ EXP_DIR = './checkpoints/{}'.format(TRIAL_ID)
 #         'lr_intra': 0.1, 'epochs_intra': 3,  'bs_intra': 64,
 #        }
 
-config = {'num_tasks': 6, 'per_task_rotation': 10, 'trial': TRIAL_ID,\
-          'memory_size': 200, 'num_lmc_samples': 20, 'lcm_init': 0.25,
-          'lr_inter': 0.2, 'epochs_inter': 10, 'bs_inter': 32, \
+config = {'num_tasks': 20, 'per_task_rotation': 9, 'trial': TRIAL_ID,\
+          'memory_size': 200, 'num_lmc_samples': 25, 'lcm_init': 0.05,
+          'lr_inter': 0.1, 'epochs_inter': 15, 'bs_inter': 32, \
           'lr_intra': 0.1, 'epochs_intra': 5,  'bs_intra': 32,
          }
 
@@ -33,8 +33,8 @@ config = {'num_tasks': 6, 'per_task_rotation': 10, 'trial': TRIAL_ID,\
 config['trial'] = TRIAL_ID
 
 experiment = Experiment(api_key="1UNrcJdirU9MEY0RC3UCU7eAg", \
-                        project_name="explore-rotmnist-5-tasks", \
-                        workspace="cl-modeconnectivity", disabled=True)
+                        project_name="explore-rotmnist-20-tasks", \
+                        workspace="cl-modeconnectivity", disabled=False)
 
 def train_single_epoch(net, optimizer, loader):
     net = net.to(DEVICE)
@@ -77,7 +77,7 @@ def eval_single_epoch(net, loader):
 
 def setup_experiment():
     Path(EXP_DIR).mkdir(parents=True, exist_ok=True)
-    init_model = MLP(100, 10)
+    init_model = MLP(HIDDENS, 10)
     save_model(init_model, '{}/init.pth'.format(EXP_DIR))
     experiment.log_parameters(config)
 
@@ -88,11 +88,12 @@ def get_all_loaders():
     """
     loaders = {'sequential': {}, 'multitask': {}, 'subset': {}}
     for task in range(1, config['num_tasks']+1):
+        print("loading data for task {}".format(task))
         loaders['multitask'][task], loaders['sequential'][task], loaders['subset'][task] = {}, {}, {}
 
-        seq_loader_train , seq_loader_val = fast_mnist_loader(get_rotated_mnist(task, config['bs_inter'], config['per_task_rotation']), DEVICE)
-        mtl_loader_train , mtl_loader_val = fast_mnist_loader(get_multitask_rotated_mnist(task, config['bs_intra'], int(config['memory_size']/task), config['per_task_rotation']),DEVICE)
-        sub_loader_train , _ = fast_mnist_loader(get_subset_rotated_mnist(task, config['bs_intra'], int(config['memory_size']), config['per_task_rotation']),DEVICE)
+        seq_loader_train , seq_loader_val = fast_mnist_loader(get_rotated_mnist(task, config['bs_inter'], config['per_task_rotation']), 'cpu')
+        mtl_loader_train , mtl_loader_val = fast_mnist_loader(get_multitask_rotated_mnist(task, config['bs_intra'], int(config['memory_size']/task), config['per_task_rotation']), 'cpu')
+        sub_loader_train , _ = fast_mnist_loader(get_subset_rotated_mnist(task, config['bs_intra'], 5*int(config['memory_size']), config['per_task_rotation']),'cpu')
         
         loaders['multitask'][task]['train'], loaders['multitask'][task]['val'] = mtl_loader_train, mtl_loader_val
         loaders['sequential'][task]['train'], loaders['sequential'][task]['val'] = seq_loader_train, seq_loader_val
@@ -167,8 +168,8 @@ def train_task_lmc(task, config):
 
     loader_prev = loaders['multitask'][task]['train']
     loader_curr = loaders['subset'][task]['train']
-
-    for epoch in range(config['epochs_inter']): 
+    factor = 2 if task == config['num_tasks'] else 1
+    for epoch in range(factor*config['epochs_inter']): 
         model_lmc.train()
         optimizer.zero_grad()
 
