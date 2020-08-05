@@ -34,7 +34,7 @@ config['trial'] = TRIAL_ID
 
 experiment = Experiment(api_key="1UNrcJdirU9MEY0RC3UCU7eAg", \
                         project_name="explore-rotmnist-20-tasks", \
-                        workspace="cl-modeconnectivity", disabled=False)
+                        workspace="cl-modeconnectivity", disabled=True)
 
 def train_single_epoch(net, optimizer, loader):
     net = net.to(DEVICE)
@@ -86,16 +86,16 @@ def get_all_loaders():
     """
     Create all required dataset loaders for the CL experience
     """
-    loaders = {'sequential': {}, 'multitask': {}, 'subset': {}}
+    loaders = {'sequential': {}, 'multitask': get_multitask_rotated_mnist(config['num_tasks'], config['bs_intra'], int(config['memory_size']/config['num_tasks']),  config['per_task_rotation']), 'subset': {}}
     for task in range(1, config['num_tasks']+1):
         print("loading data for task {}".format(task))
-        loaders['multitask'][task], loaders['sequential'][task], loaders['subset'][task] = {}, {}, {}
+        loaders['sequential'][task], loaders['subset'][task] = {}, {}
 
-        seq_loader_train , seq_loader_val = fast_mnist_loader(get_rotated_mnist(task, config['bs_inter'], config['per_task_rotation']), 'cpu')
-        mtl_loader_train , mtl_loader_val = fast_mnist_loader(get_multitask_rotated_mnist(task, config['bs_intra'], int(config['memory_size']/task), config['per_task_rotation']), 'cpu')
-        sub_loader_train , _ = fast_mnist_loader(get_subset_rotated_mnist(task, config['bs_intra'], 5*int(config['memory_size']), config['per_task_rotation']),'cpu')
+        seq_loader_train , seq_loader_val = fast_mnist_loader(get_rotated_mnist(task, config['bs_intra'], config['per_task_rotation']), 'cpu')
+        # mtl_loader_train , mtl_loader_val = fast_mnist_loader(get_multitask_rotated_mnist(task, config['bs_intra'], int(config['memory_size']/task), config['per_task_rotation']), 'cpu')
+        sub_loader_train , _ = fast_mnist_loader(get_subset_rotated_mnist(task, config['bs_inter'], 5*int(config['memory_size']), config['per_task_rotation']),'cpu')
         
-        loaders['multitask'][task]['train'], loaders['multitask'][task]['val'] = mtl_loader_train, mtl_loader_val
+        # loaders['multitask'][task]['train'], loaders['multitask'][task]['val'] = mtl_loader_train, mtl_loader_val
         loaders['sequential'][task]['train'], loaders['sequential'][task]['val'] = seq_loader_train, seq_loader_val
         loaders['subset'][task]['train'] = sub_loader_train
     return loaders
