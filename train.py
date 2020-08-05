@@ -24,9 +24,9 @@ EXP_DIR = './checkpoints/{}'.format(TRIAL_ID)
 #        }
 
 config = {'num_tasks': 20, 'per_task_rotation': 9, 'trial': TRIAL_ID,\
-          'memory_size': 200, 'num_lmc_samples': 25, 'lcm_init': 0.05,
-          'lr_inter': 0.1, 'epochs_inter': 15, 'bs_inter': 32, \
-          'lr_intra': 0.1, 'epochs_intra': 5,  'bs_intra': 32,
+          'memory_size': 200, 'num_lmc_samples': 25, 'lcm_init': 0.03,
+          'lr_inter': 0.1, 'epochs_inter': 5, 'bs_inter': 16, \
+          'lr_intra': 0.1, 'epochs_intra': 1,  'bs_intra': 64,
          }
 
 # config = nni.get_next_parameter()
@@ -34,7 +34,7 @@ config['trial'] = TRIAL_ID
 
 experiment = Experiment(api_key="1UNrcJdirU9MEY0RC3UCU7eAg", \
                         project_name="explore-rotmnist-20-tasks", \
-                        workspace="cl-modeconnectivity", disabled=True)
+                        workspace="cl-modeconnectivity", disabled=False)
 
 def train_single_epoch(net, optimizer, loader):
     net = net.to(DEVICE)
@@ -93,7 +93,7 @@ def get_all_loaders():
 
         seq_loader_train , seq_loader_val = fast_mnist_loader(get_rotated_mnist(task, config['bs_intra'], config['per_task_rotation']), 'cpu')
         # mtl_loader_train , mtl_loader_val = fast_mnist_loader(get_multitask_rotated_mnist(task, config['bs_intra'], int(config['memory_size']/task), config['per_task_rotation']), 'cpu')
-        sub_loader_train , _ = fast_mnist_loader(get_subset_rotated_mnist(task, config['bs_inter'], 5*int(config['memory_size']), config['per_task_rotation']),'cpu')
+        sub_loader_train , _ = fast_mnist_loader(get_subset_rotated_mnist(task, config['bs_inter'], 2*int(config['memory_size']), config['per_task_rotation']),'cpu')
         
         # loaders['multitask'][task]['train'], loaders['multitask'][task]['val'] = mtl_loader_train, mtl_loader_val
         loaders['sequential'][task]['train'], loaders['sequential'][task]['val'] = seq_loader_train, seq_loader_val
@@ -168,7 +168,7 @@ def train_task_lmc(task, config):
 
     loader_prev = loaders['multitask'][task]['train']
     loader_curr = loaders['subset'][task]['train']
-    factor = 2 if task == config['num_tasks'] else 1
+    factor = 3 if task == config['num_tasks'] else 1
     for epoch in range(factor*config['epochs_inter']): 
         model_lmc.train()
         optimizer.zero_grad()
@@ -206,15 +206,25 @@ def main():
             print(prev_task, metrics)
             log_comet_metric(experiment, 't_{}_seq_acc'.format(prev_task), metrics['accuracy'], task)
             log_comet_metric(experiment, 't_{}_seq_loss'.format(prev_task), round(metrics['loss'], 5), task)
-        
+            if task == 1:
+                log_comet_metric(experiment, 'avg_acc', metrics['accuracy'],task)
+                log_comet_metric(experiment, 'avg_loss', metrics['loss'],task)
+
         if task > 1:
+            accs, losses = [], []
             print('---- Task {} (lcm) ----'.format(task))
             lmc_model = train_task_lmc(task, config)
             for prev_task in range(1, task+1):
                 metrics = eval_single_epoch(lmc_model, loaders['sequential'][prev_task]['val'])
+                accs.append(metrics['accuracy'])
+                losses.append(metrics['loss'])
+                
                 print(prev_task, metrics)
                 log_comet_metric(experiment, 't_{}_lmc_acc'.format(prev_task), metrics['accuracy'], task)
                 log_comet_metric(experiment, 't_{}_lmc_loss'.format(prev_task), round(metrics['loss'], 5), task)
+            log_comet_metric(experiment, 'avg_acc', np.mean(accs),task)
+            log_comet_metric(experiment, 'avg_loss', np.mean(losses),task)
+            
         print()
     experiment.log_asset_folder(EXP_DIR)
     experiment.end()
