@@ -6,15 +6,15 @@ import numpy as np
 import pandas as pd
 import torch.nn as nn
 from models import MLP,GatedMLP,Resnet20
-from data_utils import get_multitask_rotated_mnist, get_rotated_mnist, get_subset_rotated_mnist
+from data_utils import get_multitask_rotated_mnist, get_rotated_mnist, get_subset_rotated_mnist, fast_mnist_loader
 from utils import save_model, load_model, get_norm_distance, get_cosine_similarity
 from utils import  plot, flatten_params, assign_weights, get_xy, contour_plot, get_random_string, assign_grads
 import uuid
 from pathlib import Path
 
 
-DEVICE = 'cuda' #if torch.cuda.is_available() else 'cpu'
-TRIAL_ID =  os.environ.get('NNI_TRIAL_JOB_ID', "UNKNOWN")
+DEVICE = 'cuda' if torch.cuda.is_available() else 'cpu'
+TRIAL_ID =  os.environ.get('NNI_TRIAL_JOB_ID', get_random_string(5))
 EXP_DIR = './checkpoints/{}'.format(TRIAL_ID)
 
 # config = {'num_tasks': 5, 'per_task_rotation': 10, 'trial': TRIAL_ID,\
@@ -23,12 +23,18 @@ EXP_DIR = './checkpoints/{}'.format(TRIAL_ID)
 # 		  'lr_intra': 0.1, 'epochs_intra': 3,  'bs_intra': 64,
 # 		 }
 
-config = nni.get_next_parameter()
+config = {'num_tasks': 6, 'per_task_rotation': 10, 'trial': TRIAL_ID,\
+		  'memory_size': 200, 'num_lmc_samples': 10, 'lcm_init': 0.25,
+		  'lr_inter': 0.1, 'epochs_inter': 5, 'bs_inter': 16, \
+		  'lr_intra': 0.1, 'epochs_intra': 5,  'bs_intra': 64,
+		 }
+
+# config = nni.get_next_parameter()
 config['trial'] = TRIAL_ID
 
 experiment = Experiment(api_key="1UNrcJdirU9MEY0RC3UCU7eAg", \
 						project_name="explore-rotmnist-5-tasks", \
-						workspace="cl-modeconnectivity")
+						workspace="cl-modeconnectivity", disabled=True)
 
 def train_single_epoch(net, optimizer, loader):
 	net = net.to(DEVICE)
@@ -84,9 +90,9 @@ def get_all_loaders():
 	for task in range(1, config['num_tasks']+1):
 		loaders['multitask'][task], loaders['sequential'][task], loaders['subset'][task] = {}, {}, {}
 
-		seq_loader_train , seq_loader_val = get_rotated_mnist(task, config['bs_inter'], config['per_task_rotation'])
-		mtl_loader_train , mtl_loader_val = get_multitask_rotated_mnist(task, config['bs_intra'], int(config['memory_size']/task), config['per_task_rotation'])
-		sub_loader_train , _ = get_subset_rotated_mnist(task, config['bs_intra'], int(config['memory_size']), config['per_task_rotation'])
+		seq_loader_train , seq_loader_val = fast_mnist_loader(get_rotated_mnist(task, config['bs_inter'], config['per_task_rotation']), DEVICE)
+		mtl_loader_train , mtl_loader_val = fast_mnist_loader(get_multitask_rotated_mnist(task, config['bs_intra'], int(config['memory_size']/task), config['per_task_rotation']),DEVICE)
+		sub_loader_train , _ = fast_mnist_loader(get_subset_rotated_mnist(task, config['bs_intra'], int(config['memory_size']), config['per_task_rotation']),DEVICE)
 		
 		loaders['multitask'][task]['train'], loaders['multitask'][task]['val'] = mtl_loader_train, mtl_loader_val
 		loaders['sequential'][task]['train'], loaders['sequential'][task]['val'] = seq_loader_train, seq_loader_val

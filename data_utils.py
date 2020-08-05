@@ -10,7 +10,22 @@ from torchvision.datasets import MNIST
 import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
-PER_TASK_ROATATION = 45
+PER_TASK_ROATATION = 10
+
+def fast_mnist_loader(loaders, device):
+	train_loader, eval_loader = loaders
+	trains, evals = [], []
+	for data, target in train_loader:
+		data = data.to(device).view(-1, 784)
+		target = target.to(device)
+		trains.append([data, target])
+
+	for data, target in eval_loader:
+		data = data.to(device).view(-1, 784)
+		target = target.to(device)
+		evals.append([data, target])
+
+	return trains, evals
 
 class RotationTransform:
 	"""
