@@ -17,19 +17,14 @@ DEVICE = 'cuda' if torch.cuda.is_available() else 'cpu'
 TRIAL_ID =  os.environ.get('NNI_TRIAL_JOB_ID', get_random_string(5))
 EXP_DIR = './checkpoints/{}'.format(TRIAL_ID)
 
-# config = {'num_tasks': 5, 'per_task_rotation': 10, 'trial': TRIAL_ID,\
-#         'memory_size': 200,  'num_lmc_samples': 20, 'lcm_init': 0.4,
-#         'lr_inter': 1.25, 'epochs_inter': 3, 'bs_inter': 32, \
-#         'lr_intra': 0.1, 'epochs_intra': 3,  'bs_intra': 64,
-#        }
 
-config = {'num_tasks': 20, 'per_task_rotation': 9, 'trial': TRIAL_ID,\
-          'memory_size': 200, 'num_lmc_samples': 25, 'lcm_init': 0.03,
-          'lr_inter': 0.1, 'epochs_inter': 5, 'bs_inter': 16, \
-          'lr_intra': 0.1, 'epochs_intra': 1,  'bs_intra': 64,
-         }
+# config = {'num_tasks': 20, 'per_task_rotation': 9, 'trial': TRIAL_ID,\
+#           'memory_size': 200, 'num_lmc_samples': 25, 'lcm_init': 0.03,
+#           'lr_inter': 0.1, 'epochs_inter': 5, 'bs_inter': 16, \
+#           'lr_intra': 0.1, 'epochs_intra': 1,  'bs_intra': 64,
+#          }
 
-# config = nni.get_next_parameter()
+config = nni.get_next_parameter()
 config['trial'] = TRIAL_ID
 
 experiment = Experiment(api_key="1UNrcJdirU9MEY0RC3UCU7eAg", \

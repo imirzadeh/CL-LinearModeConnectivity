@@ -1,12 +1,12 @@
 { "num_tasks": {"_type":"choice", "_value":[5]},
-  "per_task_rotation": {"_type": "choice", "_value": [10]},
-  "memory_size": {"_type": "choice", "_value": [50, 100, 200]},
+  "per_task_rotation": {"_type": "choice", "_value": [9]},
+  "memory_size": {"_type": "choice", "_value": [200]},
   "num_lmc_samples": {"_type": "choice", "_value": [5, 10, 25]},
-  "lcm_init": {"_type": "choice", "_value": [0.1, 0.25, 0.5]},
-  "lr_inter": {"_type": "choice", "_value": [0.1, 0.25, 0.5, 1.5, 3.0]},
-  "epochs_inter": {"_type": "choice", "_value": [25, 50, 100]},
-  "bs_inter": {"_type": "choice", "_value": [32, 64]},
-  "lr_intra": {"_type": "choice", "_value": [0.05, 0.1]},
-  "epochs_intra": {"_type": "choice", "_value": [5]},
-  "bs_intra": {"_type": "choice", "_value": [32, 64]}
+  "lcm_init": {"_type": "choice", "_value": [0.01, 0.1]},
+  "lr_inter": {"_type": "choice", "_value": [0.01, 0.05, 0.1]},
+  "epochs_inter": {"_type": "choice", "_value": [1, 2, 5, 10]},
+  "bs_inter": {"_type": "choice", "_value": [16, 64]},
+  "lr_intra": {"_type": "choice", "_value": [0.01, 0.05, 0.1]},
+  "epochs_intra": {"_type": "choice", "_value": [1]},
+  "bs_intra": {"_type": "choice", "_value": [16, 64]}
 }
