@@ -27,6 +27,22 @@ def fast_mnist_loader(loaders, device='cpu'):
 
     return trains, evals
 
+
+def fast_cifar_loader(loaders, device='cpu'):
+    train_loader, eval_loader = loaders
+    trains, evals = [], []
+    for data, target in train_loader:
+        data = data.to(device)
+        target = target.to(device)
+        trains.append([data, target])
+
+    for data, target in eval_loader:
+        data = data.to(device)
+        target = target.to(device)
+        evals.append([data, target])
+
+    return trains, evals
+
 class RotationTransform:
     """
     Rotation transforms for the images in `Rotation MNIST` dataset.
@@ -105,8 +121,9 @@ def get_subset_rotated_mnist(task_id, batch_size, num_examples, per_task_rotatio
 
     return train_loader, test_loader
 
-def get_multitask_rotated_mnist(num_tasks, batch_size, num_examples_per_task=20, per_task_rotation=PER_TASK_ROATATION):
+def get_multitask_rotated_mnist(num_tasks, batch_size, num_examples, per_task_rotation=PER_TASK_ROATATION):
     per_task_rotation = PER_TASK_ROATATION
+    num_examples_per_task = num_examples//num_tasks
     
     trains = []
     tests = []
@@ -123,6 +140,115 @@ def get_multitask_rotated_mnist(num_tasks, batch_size, num_examples_per_task=20,
 
     return all_mtl_data
 
+
+def get_split_cifar100(task_id, batch_size, cifar_train, cifar_test):
+    """
+    Returns a single task of split CIFAR-100 dataset
+    :param task_id:
+    :param batch_size:
+    :return:
+    """
+
+    start_class = (task_id-1)*5
+    end_class = task_id * 5
+
+    targets_train = torch.tensor(cifar_train.targets)
+    target_train_idx = ((targets_train >= start_class) & (targets_train < end_class))
+    
+    targets_test = torch.tensor(cifar_test.targets)
+    target_test_idx = ((targets_test >= start_class) & (targets_test < end_class))
+
+    train_loader = torch.utils.data.DataLoader(torch.utils.data.dataset.Subset(cifar_train, np.where(target_train_idx==1)[0]), batch_size=batch_size, shuffle=True)
+    test_loader = torch.utils.data.DataLoader(torch.utils.data.dataset.Subset(cifar_test, np.where(target_test_idx==1)[0]), batch_size=batch_size)
+
+    return train_loader, test_loader
+
+
+def get_subset_split_cifar100(task_id, batch_size, cifar_train, num_examples):
+    """
+    Returns a single task of split CIFAR-100 dataset
+    :param task_id:
+    :param batch_size:
+    :return:
+    """
+
+    start_class = (task_id-1)*5
+    end_class = task_id * 5
+
+    per_class_examples = num_examples//5
+
+    targets_train = torch.tensor(cifar_train.targets)
+
+    # target_train_idx = ((targets_train >= start_class) & (targets_train < end_class))
+    # train_dataset = torch.utils.data.dataset.Subset(cifar_train, np.where(target_train_idx==1)[0])
+    
+    trains = []
+    for class_number in range(start_class, end_class):
+        target = (targets_train == class_number)
+        class_train_idx = np.random.choice(np.where(target == 1)[0], per_class_examples, False)
+        current_class_train_dataset = torch.utils.data.dataset.Subset(cifar_train, class_train_idx)
+        trains.append(current_class_train_dataset)              
+
+    trains = ConcatDataset(trains)
+    train_loader = torch.utils.data.DataLoader(trains, batch_size=batch_size, shuffle=True)
+
+    return train_loader, []
+
+
+
+def get_multitask_cifar100_loaders(num_tasks, batch_size, num_examples):
+    num_examples_per_task = num_examples//num_tasks
+    trains = []
+    tests = []
+    all_mtl_data = {}
+    cifar_transforms = torchvision.transforms.Compose([torchvision.transforms.ToTensor(),])
+    cifar_train = torchvision.datasets.CIFAR100('./data/', train=True, download=True, transform=cifar_transforms)
+
+    for task in range(1, num_tasks+1):
+        all_mtl_data[task] = {}
+        train_loader, test_loader = fast_cifar_loader(get_subset_split_cifar100(task, batch_size, cifar_train, num_examples_per_task))
+        trains += train_loader
+        tests += test_loader
+        all_mtl_data[task]['train'] = trains[:]
+        all_mtl_data[task]['val'] = tests[:]
+
+
+    return all_mtl_data
+
+
+def get_all_loaders(dataset, num_tasks, bs_inter, bs_intra, num_examples, per_task_rotation=9):
+    dataset = dataset.lower()
+    loaders = {'sequential': {},  'multitask':  {}, 'subset': {} }
+    fast_loader = fast_mnist_loader if 'mnist' in dataset else fast_cifar_loader
+
+    print('loading multitask {}'.format(dataset))
+    if 'cifar' in dataset:
+        loaders['multitask'] = get_multitask_cifar100_loaders(num_tasks, bs_inter, num_examples)
+    elif 'rot' in dataset and 'mnist' in dataset:
+        loaders['multitask'] = get_multitask_rotated_mnist(num_tasks, bs_inter, num_examples, per_task_rotation)
+    else:
+        raise Exception("{} not implemented!".format(dataset))
+
+    # cache cifar
+    if 'cifar' in dataset:
+        cifar_transforms = torchvision.transforms.Compose([torchvision.transforms.ToTensor(),])
+        cifar_train = torchvision.datasets.CIFAR100('./data/', train=True, download=True, transform=cifar_transforms)
+        cifar_test = torchvision.datasets.CIFAR100('./data/', train=False, download=True, transform=cifar_transforms)
+
+    # Load sequential tasks
+    for task in range(1, num_tasks+1):
+        loaders['sequential'][task], loaders['subset'][task] = {}, {}
+        print("loading {} for task {}".format(dataset, task))
+        if 'rot' in dataset and 'mnist' in dataset:
+            seq_loader_train , seq_loader_val = fast_loader(get_rotated_mnist(task, bs_intra, per_task_rotation), 'cpu')
+            sub_loader_train , _ = fast_loader(get_subset_rotated_mnist(task, bs_inter, 2*num_examples, per_task_rotation),'cpu')
+
+        elif 'cifar' in dataset:
+            seq_loader_train , seq_loader_val = fast_loader(get_split_cifar100(task, bs_intra, cifar_train, cifar_test), 'cpu')
+            sub_loader_train , _ = fast_loader(get_subset_split_cifar100(task, bs_inter, cifar_train, 2*num_examples),'cpu')
+        loaders['sequential'][task]['train'], loaders['sequential'][task]['val'] = seq_loader_train, seq_loader_val
+        loaders['subset'][task]['train'] = sub_loader_train
+    return loaders
 
 
 # class FastMNIST(MNIST):
@@ -146,7 +272,8 @@ def get_multitask_rotated_mnist(num_tasks, batch_size, num_examples_per_task=20,
 
 
 # if __name__ == "__main__":
-#     loaders = get_multitask_rotated_mnist(5, 32, 20, 10)
+#     loaders = get_all_loaders('cifar', 5, 16, 16, 25, 10)
+#     print(loaders['sequential'].keys(), loaders['subset'].keys(), loaders['multitask'].keys())
 #     for task in range(1, 6):
 #         count = 0
 #         print('testing task {}'.format(task))
