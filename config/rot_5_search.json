@@ -1,4 +1,4 @@
-{ "num_tasks": {"_type":"choice", "_value":[5]},
+{ "num_tasks": {"_type":"choice", "_value":[20]},
   "per_task_rotation": {"_type": "choice", "_value": [9]},
   "memory_size": {"_type": "choice", "_value": [200]},
   "num_lmc_samples": {"_type": "choice", "_value": [5, 10, 25]},
