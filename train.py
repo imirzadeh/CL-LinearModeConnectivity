@@ -126,7 +126,7 @@ def get_line_loss(start_w, w, loader):
 
 def get_clf_loss(net, loader):
     criterion = nn.CrossEntropyLoss().to(DEVICE)
-    net.train()
+    net.eval()
     test_loss = 0
     count = 0
 
