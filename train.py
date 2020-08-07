@@ -19,13 +19,13 @@ TRIAL_ID =  os.environ.get('NNI_TRIAL_JOB_ID', get_random_string(5))
 EXP_DIR = './checkpoints/{}'.format(TRIAL_ID)
 
 
-config = {'num_tasks': 20, 'per_task_rotation': 10, 'trial': TRIAL_ID,\
-          'memory_size': 200, 'num_lmc_samples': 10, 'lcm_init': 0.1,
-          'lr_inter': 0.01, 'epochs_inter': 10, 'bs_inter': 16, \
-          'lr_intra': 0.01, 'epochs_intra': 1,  'bs_intra': 16,
-         }
+# config = {'num_tasks': 20, 'per_task_rotation': 10, 'trial': TRIAL_ID,\
+#           'memory_size': 200, 'num_lmc_samples': 10, 'lcm_init': 0.1,
+#           'lr_inter': 0.01, 'epochs_inter': 10, 'bs_inter': 16, \
+#           'lr_intra': 0.01, 'epochs_intra': 1,  'bs_intra': 16,
+#          }
 
-# config = nni.get_next_parameter()
+config = nni.get_next_parameter()
 config['trial'] = TRIAL_ID
 
 experiment = Experiment(api_key="1UNrcJdirU9MEY0RC3UCU7eAg", \
