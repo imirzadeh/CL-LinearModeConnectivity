@@ -5,41 +5,42 @@ import torch
 import numpy as np
 import pandas as pd
 import torch.nn as nn
-from models import MLP,GatedMLP,Resnet20
-from data_utils import get_multitask_rotated_mnist, get_rotated_mnist, get_subset_rotated_mnist, fast_mnist_loader
-from utils import save_model, load_model, get_norm_distance, get_cosine_similarity
+from models import MLP, ResNet18
+from data_utils import get_all_loaders
+from utils import save_model,load_model, get_norm_distance, get_cosine_similarity
 from utils import  plot, flatten_params, assign_weights, get_xy, contour_plot, get_random_string, assign_grads
 import uuid
 from pathlib import Path
 
-HIDDENS = 200
+DATASET = 'cifar'
+HIDDENS = 100
 DEVICE = 'cuda' if torch.cuda.is_available() else 'cpu'
 TRIAL_ID =  os.environ.get('NNI_TRIAL_JOB_ID', get_random_string(5))
 EXP_DIR = './checkpoints/{}'.format(TRIAL_ID)
 
 
-# config = {'num_tasks': 20, 'per_task_rotation': 9, 'trial': TRIAL_ID,\
-#           'memory_size': 200, 'num_lmc_samples': 25, 'lcm_init': 0.03,
-#           'lr_inter': 0.1, 'epochs_inter': 5, 'bs_inter': 16, \
-#           'lr_intra': 0.1, 'epochs_intra': 1,  'bs_intra': 64,
-#          }
+config = {'num_tasks': 2, 'per_task_rotation': 10, 'trial': TRIAL_ID,\
+          'memory_size': 100, 'num_lmc_samples': 10, 'lcm_init': 0.1,
+          'lr_inter': 0.1, 'epochs_inter': 2, 'bs_inter': 32, \
+          'lr_intra': 0.1, 'epochs_intra': 1,  'bs_intra': 32,
+         }
 
-config = nni.get_next_parameter()
+# config = nni.get_next_parameter()
 config['trial'] = TRIAL_ID
 
 experiment = Experiment(api_key="1UNrcJdirU9MEY0RC3UCU7eAg", \
                         project_name="explore-rotmnist-20-tasks", \
-                        workspace="cl-modeconnectivity", disabled=False)
+                        workspace="cl-modeconnectivity", disabled=True)
 
 def train_single_epoch(net, optimizer, loader):
     net = net.to(DEVICE)
     criterion = nn.CrossEntropyLoss().to(DEVICE)
     net.train()
-    for batch_idx, (data, target) in enumerate(loader):
-        data = data.to(DEVICE).view(-1, 784)
+    for batch_idx, (data, target, task_id) in enumerate(loader):
+        data = data.to(DEVICE)#.view(-1, 784)
         target = target.to(DEVICE)
         optimizer.zero_grad()
-        pred = net(data)
+        pred = net(data, task_id)
 
         loss = criterion(pred, target)
         loss.backward()
@@ -56,11 +57,11 @@ def eval_single_epoch(net, loader):
     criterion = nn.CrossEntropyLoss().to(DEVICE)
 
     with torch.no_grad():
-        for data, target in loader:
-            data = data.to(DEVICE).view(-1, 784)
+        for data, target, task_id in loader:
+            data = data.to(DEVICE)#.view(-1, 784)
             target = target.to(DEVICE)
             count += len(data)
-            output = net(data)
+            output = net(data, task_id)
             test_loss += criterion(output, target).item()
             pred = output.data.max(1, keepdim=True)[1]
             correct += pred.eq(target.data.view_as(pred)).sum()
@@ -72,28 +73,10 @@ def eval_single_epoch(net, loader):
 
 def setup_experiment():
     Path(EXP_DIR).mkdir(parents=True, exist_ok=True)
-    init_model = MLP(HIDDENS, 10)
+    init_model = ResNet18()#MLP(HIDDENS, 10)
     save_model(init_model, '{}/init.pth'.format(EXP_DIR))
     experiment.log_parameters(config)
 
-
-def get_all_loaders():
-    """
-    Create all required dataset loaders for the CL experience
-    """
-    loaders = {'sequential': {}, 'multitask': get_multitask_rotated_mnist(config['num_tasks'], config['bs_intra'], int(config['memory_size']/config['num_tasks']),  config['per_task_rotation']), 'subset': {}}
-    for task in range(1, config['num_tasks']+1):
-        print("loading data for task {}".format(task))
-        loaders['sequential'][task], loaders['subset'][task] = {}, {}
-
-        seq_loader_train , seq_loader_val = fast_mnist_loader(get_rotated_mnist(task, config['bs_intra'], config['per_task_rotation']), 'cpu')
-        # mtl_loader_train , mtl_loader_val = fast_mnist_loader(get_multitask_rotated_mnist(task, config['bs_intra'], int(config['memory_size']/task), config['per_task_rotation']), 'cpu')
-        sub_loader_train , _ = fast_mnist_loader(get_subset_rotated_mnist(task, config['bs_inter'], 2*int(config['memory_size']), config['per_task_rotation']),'cpu')
-        
-        # loaders['multitask'][task]['train'], loaders['multitask'][task]['val'] = mtl_loader_train, mtl_loader_val
-        loaders['sequential'][task]['train'], loaders['sequential'][task]['val'] = seq_loader_train, seq_loader_val
-        loaders['subset'][task]['train'] = sub_loader_train
-    return loaders
 
 def train_task_sequentially(task, config):
     prev_model_name = 'init' if task == 1 else 't_{}_seq'.format(str(task-1))
@@ -122,7 +105,16 @@ def get_line_loss(start_w, w, loader):
         m = assign_weights(m, cur_weight).to(DEVICE)
         current_loss = get_clf_loss(m, loader)
         current_loss.backward()
-        for param in m.parameters():
+
+        # print("____________________________________ DEBUG ____________________________________")
+        # for name, param in m.named_parameters():
+        #     print(name, '=>' , param.grad is not None )
+        # print("____________________________________ DEBUG ____________________________________")
+
+        for name, param in m.named_parameters():
+            # print('param => ', name)
+            # if param.grad is not None:
+            #     print(param.grad.shape)
             grads.append(param.grad.view(-1))
         grads = torch.cat(grads)
         if accum_grad is None:
@@ -134,15 +126,15 @@ def get_line_loss(start_w, w, loader):
 
 def get_clf_loss(net, loader):
     criterion = nn.CrossEntropyLoss().to(DEVICE)
-    net.eval()
+    net.train()
     test_loss = 0
     count = 0
 
-    for data, target in loader:
+    for data, target, task_id in loader:
             count += len(data)
-            data = data.to(DEVICE).view(-1, 784)
+            data = data.to(DEVICE)#.view(-1, 784)
             target = target.to(DEVICE)
-            output = net(data)
+            output = net(data, task_id)
             test_loss += criterion(output, target)
     test_loss /= count
     return test_loss
@@ -158,12 +150,13 @@ def train_task_lmc(task, config):
 
     model_lmc = load_model('{}/{}.pth'.format(EXP_DIR, 'init')).to(DEVICE)
     model_lmc = assign_weights(model_lmc, w_prev + config['lcm_init']*(w_curr-w_prev)).to(DEVICE)
-    optimizer = torch.optim.SGD(model_lmc.parameters(), lr=config['lr_inter'], momentum=0.8)
+    # optimizer = torch.optim.SGD(model_lmc.parameters(), lr=config['lr_inter'], momentum=0.8)
 
 
     loader_prev = loaders['multitask'][task]['train']
     loader_curr = loaders['subset'][task]['train']
-    factor = 3 if task == config['num_tasks'] else 1
+    optimizer = torch.optim.SGD(model_lmc.parameters(), lr=config['lr_inter'], momentum=0.8)
+    factor = 2 if task == config['num_tasks'] else 1
     for epoch in range(factor*config['epochs_inter']): 
         model_lmc.train()
         optimizer.zero_grad()
@@ -224,7 +217,7 @@ def main():
     experiment.log_asset_folder(EXP_DIR)
     experiment.end()
 
-loaders = get_all_loaders()
+loaders = get_all_loaders('cifar', config['num_tasks'], config['bs_inter'], config['bs_intra'], config['memory_size'], config.get('per_task_rotation'))
 
 if __name__ == "__main__":
     main()
