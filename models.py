@@ -4,8 +4,10 @@ import torch.nn as nn
 from collections import OrderedDict
 import torch.nn.utils.weight_norm as weightNorm
 import torch.nn.functional as F
+from torch.nn.functional import relu, avg_pool2d
+
 import torch.nn.init as init
-from utils import load_model
+
 
 class MLP(nn.Module):
 	"""
@@ -37,39 +39,31 @@ def conv3x3(in_planes, out_planes, stride=1):
 					 padding=1, bias=False)
 
 
+
 class BasicBlock(nn.Module):
-	expansion = 1
+    expansion = 1
 
-	def __init__(self, in_planes, planes, stride=1, config={}):
-		super(BasicBlock, self).__init__()
-		self.conv1 = conv3x3(in_planes, planes, stride)
-		self.conv2 = conv3x3(planes, planes)
+    def __init__(self, in_planes, planes, stride=1, config={}):
+        super(BasicBlock, self).__init__()
+        self.conv1 = conv3x3(in_planes, planes, stride)
+        self.bn1 = nn.BatchNorm2d(planes)
+        self.conv2 = conv3x3(planes, planes)
+        self.bn2 = nn.BatchNorm2d(planes)
 
-		self.shortcut = nn.Sequential()
-		if stride != 1 or in_planes != self.expansion * planes:
-			self.shortcut = nn.Sequential(
-				nn.Conv2d(in_planes, self.expansion * planes, kernel_size=1,
-						  stride=stride, bias=False),
-			)
-		self.IC1 = nn.Sequential(
-			nn.BatchNorm2d(planes),
-			nn.Dropout(p=config['dropout'])
-			)
+        self.shortcut = nn.Sequential()
+        if stride != 1 or in_planes != self.expansion * planes:
+            self.shortcut = nn.Sequential(
+                nn.Conv2d(in_planes, self.expansion * planes, kernel_size=1,
+                          stride=stride, bias=False),
+                nn.BatchNorm2d(self.expansion * planes)
+            )
 
-		self.IC2 = nn.Sequential(
-			nn.BatchNorm2d(planes),
-			nn.Dropout(p=config['dropout'])
-			)
-
-	def forward(self, x):
-		out = self.conv1(x)
-		out = relu(out)
-		out = self.IC1(out)
-
-		out += self.shortcut(x)
-		out = relu(out)
-		out = self.IC2(out)
-		return out
+    def forward(self, x):
+        out = relu(self.bn1(self.conv1(x)))
+        out = self.bn2(self.conv2(out))
+        out += self.shortcut(x)
+        out = relu(out)
+        return out
 
 
 class ResNet(nn.Module):
@@ -119,8 +113,13 @@ def ResNet18(nclasses=100, nf=20, config={'dropout': 0.05}):
 
 
 # if __name__ == "__main__":
-	# model = MLP(100, 10)
-	# init = load_model('./checkpoints/YOGby/init.pth')
+# 	# model = MLP(100, 10)
+# 	model = load_model('./checkpoints/YOGby/init.pth')
+# 	r1 = flatten_params(model, True)
+# 	r2 = flatten_params_old(model, True)
+# 	assert r1.shape == r2.shape
+# 	print(r1[:5], r1[10000], r1[-1])
+# 	print(r2[:5], r2[10000] ,r2[-1])
 	# init = ResNet18()
 	# layers = init.state_dict()
 	# count = 0
