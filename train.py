@@ -19,17 +19,17 @@ TRIAL_ID =  os.environ.get('NNI_TRIAL_JOB_ID', get_random_string(5))
 EXP_DIR = './checkpoints/{}'.format(TRIAL_ID)
 
 
-config = {'num_tasks': 2, 'per_task_rotation': 10, 'trial': TRIAL_ID,\
-          'memory_size': 100, 'num_lmc_samples': 10, 'lcm_init': 0.1,
-          'lr_inter': 0.1, 'epochs_inter': 2, 'bs_inter': 32, \
-          'lr_intra': 0.1, 'epochs_intra': 1,  'bs_intra': 32,
+config = {'num_tasks': 20, 'per_task_rotation': 10, 'trial': TRIAL_ID,\
+          'memory_size': 100, 'num_lmc_samples': 25, 'lcm_init': 0.1,
+          'lr_inter': 0.05, 'epochs_inter': 2, 'bs_inter': 16, \
+          'lr_intra': 0.05, 'epochs_intra': 1,  'bs_intra': 16,
          }
 
 # config = nni.get_next_parameter()
 config['trial'] = TRIAL_ID
 
 experiment = Experiment(api_key="1UNrcJdirU9MEY0RC3UCU7eAg", \
-                        project_name="explore-rotmnist-20-tasks", \
+                        project_name="eexplore-cifar-20-tasks", \
                         workspace="cl-modeconnectivity", disabled=True)
 
 def train_single_epoch(net, optimizer, loader):
