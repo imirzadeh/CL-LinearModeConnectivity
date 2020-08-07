@@ -28,18 +28,18 @@ def fast_mnist_loader(loaders, device='cpu'):
     return trains, evals
 
 
-def fast_cifar_loader(loaders, device='cpu'):
+def fast_cifar_loader(loaders, task_id, device='cpu'):
     train_loader, eval_loader = loaders
     trains, evals = [], []
     for data, target in train_loader:
         data = data.to(device)
         target = target.to(device)
-        trains.append([data, target])
+        trains.append([data, target, task_id])
 
     for data, target in eval_loader:
         data = data.to(device)
         target = target.to(device)
-        evals.append([data, target])
+        evals.append([data, target, task_id])
 
     return trains, evals
 
@@ -206,20 +206,17 @@ def get_multitask_cifar100_loaders(num_tasks, batch_size, num_examples):
 
     for task in range(1, num_tasks+1):
         all_mtl_data[task] = {}
-        train_loader, test_loader = fast_cifar_loader(get_subset_split_cifar100(task, batch_size, cifar_train, num_examples_per_task))
+        train_loader, test_loader = fast_cifar_loader(get_subset_split_cifar100(task, batch_size, cifar_train, num_examples_per_task), task)
         trains += train_loader
         tests += test_loader
         all_mtl_data[task]['train'] = trains[:]
         all_mtl_data[task]['val'] = tests[:]
-
-
     return all_mtl_data
 
 
 def get_all_loaders(dataset, num_tasks, bs_inter, bs_intra, num_examples, per_task_rotation=9):
     dataset = dataset.lower()
     loaders = {'sequential': {},  'multitask':  {}, 'subset': {} }
-    fast_loader = fast_mnist_loader if 'mnist' in dataset else fast_cifar_loader
 
     print('loading multitask {}'.format(dataset))
     if 'cifar' in dataset:
@@ -240,12 +237,12 @@ def get_all_loaders(dataset, num_tasks, bs_inter, bs_intra, num_examples, per_ta
         loaders['sequential'][task], loaders['subset'][task] = {}, {}
         print("loading {} for task {}".format(dataset, task))
         if 'rot' in dataset and 'mnist' in dataset:
-            seq_loader_train , seq_loader_val = fast_loader(get_rotated_mnist(task, bs_intra, per_task_rotation), 'cpu')
-            sub_loader_train , _ = fast_loader(get_subset_rotated_mnist(task, bs_inter, 2*num_examples, per_task_rotation),'cpu')
+            seq_loader_train , seq_loader_val = fast_mnist_loader(get_rotated_mnist(task, bs_intra, per_task_rotation), 'cpu')
+            sub_loader_train , _ = fast_mnist_loader(get_subset_rotated_mnist(task, bs_inter, 2*num_examples, per_task_rotation),'cpu')
 
         elif 'cifar' in dataset:
-            seq_loader_train , seq_loader_val = fast_loader(get_split_cifar100(task, bs_intra, cifar_train, cifar_test), 'cpu')
-            sub_loader_train , _ = fast_loader(get_subset_split_cifar100(task, bs_inter, cifar_train, 2*num_examples),'cpu')
+            seq_loader_train , seq_loader_val = fast_cifar_loader(get_split_cifar100(task, bs_intra, cifar_train, cifar_test), task, 'cpu')
+            sub_loader_train , _ = fast_cifar_loader(get_subset_split_cifar100(task, bs_inter, cifar_train, 2*num_examples), task, 'cpu')
         loaders['sequential'][task]['train'], loaders['sequential'][task]['val'] = seq_loader_train, seq_loader_val
         loaders['subset'][task]['train'] = sub_loader_train
     return loaders
