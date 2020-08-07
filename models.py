@@ -46,16 +46,16 @@ class BasicBlock(nn.Module):
     def __init__(self, in_planes, planes, stride=1, config={}):
         super(BasicBlock, self).__init__()
         self.conv1 = conv3x3(in_planes, planes, stride)
-        self.bn1 = nn.BatchNorm2d(planes)
+        self.bn1 = nn.BatchNorm2d(planes, affine=False, track_running_stats=False)
         self.conv2 = conv3x3(planes, planes)
-        self.bn2 = nn.BatchNorm2d(planes)
+        self.bn2 = nn.BatchNorm2d(planes, affine=False, track_running_stats=False)
 
         self.shortcut = nn.Sequential()
         if stride != 1 or in_planes != self.expansion * planes:
             self.shortcut = nn.Sequential(
                 nn.Conv2d(in_planes, self.expansion * planes, kernel_size=1,
                           stride=stride, bias=False),
-                nn.BatchNorm2d(self.expansion * planes)
+                nn.BatchNorm2d(self.expansion * planes, affine=False, track_running_stats=False)
             )
 
     def forward(self, x):
@@ -72,7 +72,7 @@ class ResNet(nn.Module):
         self.in_planes = nf
 
         self.conv1 = conv3x3(3, nf * 1)
-        self.bn1 = nn.BatchNorm2d(nf * 1)
+        self.bn1 = nn.BatchNorm2d(nf * 1, affine=False, track_running_stats=False)
         self.layer1 = self._make_layer(block, nf * 1, num_blocks[0], stride=1, config=config)
         self.layer2 = self._make_layer(block, nf * 2, num_blocks[1], stride=2, config=config)
         self.layer3 = self._make_layer(block, nf * 4, num_blocks[2], stride=2, config=config)

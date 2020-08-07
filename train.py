@@ -19,18 +19,18 @@ TRIAL_ID =  os.environ.get('NNI_TRIAL_JOB_ID', get_random_string(5))
 EXP_DIR = './checkpoints/{}'.format(TRIAL_ID)
 
 
-config = {'num_tasks': 3, 'per_task_rotation': 10, 'trial': TRIAL_ID,\
-          'memory_size': 300, 'num_lmc_samples': 10, 'lcm_init': 0.01,
-          'lr_inter': 0.01, 'epochs_inter': 3, 'bs_inter': 64, \
-          'lr_intra': 0.01, 'epochs_intra': 10,  'bs_intra': 64,
+config = {'num_tasks': 20, 'per_task_rotation': 10, 'trial': TRIAL_ID,\
+          'memory_size': 200, 'num_lmc_samples': 10, 'lcm_init': 0.1,
+          'lr_inter': 0.01, 'epochs_inter': 10, 'bs_inter': 16, \
+          'lr_intra': 0.01, 'epochs_intra': 1,  'bs_intra': 16,
          }
 
 # config = nni.get_next_parameter()
 config['trial'] = TRIAL_ID
 
 experiment = Experiment(api_key="1UNrcJdirU9MEY0RC3UCU7eAg", \
-                        project_name="eexplore-cifar-20-tasks", \
-                        workspace="cl-modeconnectivity", disabled=True)
+                        project_name="explore-cifar-20-tasks", \
+                        workspace="cl-modeconnectivity", disabled=False)
 
 def train_single_epoch(net, optimizer, loader):
     net = net.to(DEVICE)
@@ -85,8 +85,8 @@ def train_task_sequentially(task, config):
     train_loader = loaders['sequential'][task]['train']
     
     optimizer = torch.optim.SGD(model.parameters(), lr=config['lr_intra'], momentum=0.8)
-
-    for epoch in range(config['epochs_intra']):
+    factor = 1 if task != 1 else 15
+    for epoch in range(factor*config['epochs_intra']):
         model = train_single_epoch(model, optimizer, train_loader)
 
     save_model(model, '{}/t_{}_seq.pth'.format(EXP_DIR, task))
