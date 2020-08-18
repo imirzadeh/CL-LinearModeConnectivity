@@ -117,7 +117,7 @@ class LogNormalize(colors.Normalize):
         return 0.9 * (log_v - self.log_alpha) / (np.log(self.vmax - self.vmin) - self.log_alpha)
 
 
-def contour_plot(grid, values, coords, vmax=None, log_alpha=-5, N=7, path='default.png', cmap='jet_r'):
+def contour_plot(grid, values, coords, vmax=None, log_alpha=-5, N=7, path='default.png', cmap='jet_r', lmc=False):
     rc('text', usetex=True)
     matplotlib.rcParams['text.latex.preamble'] = [r'\usepackage{amsmath}']
     
@@ -148,10 +148,15 @@ def contour_plot(grid, values, coords, vmax=None, log_alpha=-5, N=7, path='defau
     # labels[-1].set_text(r'$>\,$' + labels[-2].get_text())
     # colorbar.ax.set_yticklabels(labels)
     plt.scatter(coords[0, 0], coords[0, 1], marker='o', c='k', s=120, zorder=2)
+
     plt.text(coords[0, 0]+0.05, coords[0, 1]+0.05, r"$\hat{w}_1$", fontsize=20)
     
+
     plt.scatter(coords[1, 0], coords[1, 1], marker='o', c='k', s=120, zorder=2)
-    plt.text(coords[1, 0]+0.05, coords[1, 1]+0.05, r"$\hat{w}_\text{mtl}$", fontsize=20)
+    if lmc:
+        plt.text(coords[1, 0]+0.05, coords[1, 1]+0.05, r"$\hat{w}_\text{lmc}$", fontsize=20)
+    else:
+        plt.text(coords[1, 0]+0.05, coords[1, 1]+0.05, r"$\hat{w}_\text{mtl}$", fontsize=20)
 
     plt.scatter(coords[2, 0], coords[2, 1], marker='o', c='k', s=120, zorder=2)
     plt.text(coords[2, 0]+0.05, coords[2, 1]+0.05, r"$\hat{w}_2$", fontsize=20)

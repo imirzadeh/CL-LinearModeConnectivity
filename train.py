@@ -233,7 +233,7 @@ def plot_mode_connections():
     mtl_2 = flatten_params(load_model('{}/t_{}_mtl.pth'.format(EXP_DIR, 2)).to(DEVICE))
     # mtl_3 = flatten_params(load_model('{}/t_{}_mtl.pth'.format(EXP_DIR, 3)).to(DEVICE))
 
-    # lmc_2 = flatten_params(load_model('{}/t_{}_lcm.pth'.format(EXP_DIR, 2)).to(DEVICE))
+    lmc_2 = flatten_params(load_model('{}/t_{}_lcm.pth'.format(EXP_DIR, 2)).to(DEVICE))
     # lmc_3 = flatten_params(load_model('{}/t_{}_lcm.pth'.format(EXP_DIR, 3)).to(DEVICE))
 
 
@@ -241,13 +241,23 @@ def plot_mode_connections():
     loss, accs, ts = check_mode_connectivity(seq_1, mtl_2, eval_loader)
     plot_interpolation(ts, accs, 'seq 1 <-> mtl 2', path=EXP_DIR+'/seq1_mtl2_accs.png')
     plot_interpolation(ts, loss, 'seq 1 <-> mtl 2', path=EXP_DIR+'/seq1_mtl2_loss.png')
-    plot_loss_plane([seq_1, mtl_2, seq_2], eval_loader, path=EXP_DIR+'/task1_loss_plane.png')
+    plot_loss_plane([seq_1, mtl_2, seq_2], eval_loader, path=EXP_DIR+'/task1_surface_mtl.png')
+
+    loss, accs, ts = check_mode_connectivity(seq_1, lmc_2, eval_loader)
+    plot_interpolation(ts, accs, 'seq 1 <-> lmc 2', path=EXP_DIR+'/seq1_lmc2_accs.png')
+    plot_interpolation(ts, loss, 'seq 1 <-> lmc 2', path=EXP_DIR+'/seq1_lmc2_loss.png')
+    plot_loss_plane([seq_1, lmc_2, seq_2], eval_loader, path=EXP_DIR+'/task1_surface_lmc.png')
 
     eval_loader = loaders['sequential'][2]['val']
     loss, accs, ts = check_mode_connectivity(seq_2, mtl_2, eval_loader)
     plot_interpolation(ts, accs, 'seq 2 <-> mtl 2', path=EXP_DIR+'/seq2_mtl2_accs.png')
     plot_interpolation(ts, loss, 'seq 2 <-> mtl 2', path=EXP_DIR+'/seq2_mtl2_loss.png')
-    plot_loss_plane([seq_1, mtl_2, seq_2], eval_loader, path=EXP_DIR+'/task2_loss_plane.png')
+    plot_loss_plane([seq_1, mtl_2, seq_2], eval_loader, path=EXP_DIR+'/task2_surface_mtl.png')
+
+    loss, accs, ts = check_mode_connectivity(seq_2, lmc_2, eval_loader)
+    plot_interpolation(ts, accs, 'seq 2 <-> lmc 2', path=EXP_DIR+'/seq2_lmc2_accs.png')
+    plot_interpolation(ts, loss, 'seq 2 <-> lmc 2', path=EXP_DIR+'/seq2_lmc2_loss.png')
+    plot_loss_plane([seq_1, lmc_2, seq_2], eval_loader, path=EXP_DIR+'/task2_surface_lmc.png')
 
 
 
