@@ -7,7 +7,7 @@ import pandas as pd
 import torch.nn as nn
 from models import MLP, ResNet18
 from data_utils import get_all_loaders
-from utils import save_model,load_model, get_norm_distance, get_cosine_similarity
+from utils import save_model,load_model, get_norm_distance, get_cosine_similarity, plot_interpolation
 from utils import  plot, flatten_params, assign_weights, get_xy, contour_plot, get_random_string, assign_grads
 import uuid
 from pathlib import Path
@@ -19,17 +19,17 @@ TRIAL_ID =  os.environ.get('NNI_TRIAL_JOB_ID', get_random_string(5))
 EXP_DIR = './checkpoints/{}'.format(TRIAL_ID)
 
 
-# config = {'num_tasks': 20, 'per_task_rotation': 10, 'trial': TRIAL_ID,\
-#           'memory_size': 200, 'num_lmc_samples': 10, 'lcm_init': 0.1,
-#           'lr_inter': 0.01, 'epochs_inter': 10, 'bs_inter': 16, \
-#           'lr_intra': 0.01, 'epochs_intra': 1,  'bs_intra': 16,
-#          }
+config = {'num_tasks': 2, 'per_task_rotation': 10, 'trial': TRIAL_ID,\
+          'memory_size': 200, 'num_lmc_samples': 10, 'lcm_init': 0.1,
+          'lr_inter': 0.01, 'epochs_inter': 10, 'bs_inter': 16, \
+          'lr_intra': 0.01, 'epochs_intra': 10,  'bs_intra': 16,
+         }
 
 config = nni.get_next_parameter()
 config['trial'] = TRIAL_ID
 
 experiment = Experiment(api_key="1UNrcJdirU9MEY0RC3UCU7eAg", \
-                        project_name="explore-cifar-20-tasks", \
+                        project_name="explore-mc-cifar", \
                         workspace="cl-modeconnectivity", disabled=False)
 
 def train_single_epoch(net, optimizer, loader):
@@ -85,17 +85,27 @@ def train_task_sequentially(task, config):
     train_loader = loaders['sequential'][task]['train']
     
     optimizer = torch.optim.SGD(model.parameters(), lr=config['lr_intra'], momentum=0.8)
-    factor = 1 if task != 1 else 15
+    factor = 1 if task != 1 else 1
     for epoch in range(factor*config['epochs_intra']):
         model = train_single_epoch(model, optimizer, train_loader)
 
     save_model(model, '{}/t_{}_seq.pth'.format(EXP_DIR, task))
     if task == 1:
         save_model(model, '{}/t_{}_lcm.pth'.format(EXP_DIR, task))
+        save_model(model, '{}/t_{}_mtl.pth'.format(EXP_DIR, task))
+    return model
+
+def train_task_MTL(task, config):
+    assert task >= 2
+    model = load_model('{}/t_{}_mtl.pth'.format(EXP_DIR, task-1)).to(DEVICE)
+    train_loader = loaders['full-multitask'][task]['train']
+    optimizer = torch.optim.SGD(model.parameters(), lr=config['lr_intra'], momentum=0.8)
+    for epoch in range(config['epochs_intra']):
+        model = train_single_epoch(model, optimizer, train_loader)
+    save_model(model, '{}/t_{}_mtl.pth'.format(EXP_DIR, task))
     return model
 
 def get_line_loss(start_w, w, loader):
-
     m = load_model('{}/{}.pth'.format(EXP_DIR, 'init')).to(DEVICE)
     total_loss = 0
     accum_grad = None
@@ -106,15 +116,7 @@ def get_line_loss(start_w, w, loader):
         current_loss = get_clf_loss(m, loader)
         current_loss.backward()
 
-        # print("____________________________________ DEBUG ____________________________________")
-        # for name, param in m.named_parameters():
-        #     print(name, '=>' , param.grad is not None )
-        # print("____________________________________ DEBUG ____________________________________")
-
         for name, param in m.named_parameters():
-            # print('param => ', name)
-            # if param.grad is not None:
-            #     print(param.grad.shape)
             grads.append(param.grad.view(-1))
         grads = torch.cat(grads)
         if accum_grad is None:
@@ -176,6 +178,80 @@ def log_comet_metric(exp, name, val, step):
     exp.log_metric(name=name, value=val, step=step)
 
 
+def check_mode_connectivity(w1, w2, eval_loader):
+    net = load_model('{}/{}.pth'.format(EXP_DIR, 'init')).to(DEVICE)
+    loss_history, acc_history, ts = [], [], []
+    for t in np.arange(0.0, 1.01, 0.05):
+        ts.append(t)
+        net = assign_weights(net, w1 + t*(w2-w1)).to(DEVICE)
+        metrics = eval_single_epoch(net, eval_loader)
+        loss_history.append(metrics['loss'])
+        acc_history.append(metrics['accuracy'])
+    return loss_history, acc_history, ts
+
+
+def plot_loss_plane(w, eval_loader, path):
+
+    u = w[2] - w[0]
+    dx = np.linalg.norm(u)
+    u /= dx
+
+    v = w[1] - w[0]
+    v -= np.dot(u, v) * u
+    dy = np.linalg.norm(v)
+    v /= dy
+
+    m = load_model('{}/{}.pth'.format(EXP_DIR, 'init')).to(DEVICE)
+    m.eval()
+    coords = np.stack(get_xy(p, w[0], u, v) for p in w)
+    print("coords", coords)
+
+    G = 10
+    margin = 0.2
+    alphas = np.linspace(0.0 - margin, 1.0 + margin, G)
+    betas = np.linspace(0.0 - margin, 1.0 + margin, G)
+    tr_loss = np.zeros((G, G))
+    grid = np.zeros((G, G, 2))
+
+    loader = get_multitask_rotated_mnist(2, BATCH_SIZE, 200)[0]
+
+    for i, alpha in enumerate(alphas):
+        for j, beta in enumerate(betas):
+            p = w[0] + alpha * dx * u + beta * dy * v
+            m = assign_weights(net, p).to(DEVICE)
+            err = eval_single_epoch(m, eval_loader)['loss']
+            c = get_xy(p, w[0], u, v)
+            print(c)
+            grid[i, j] = [alpha * dx, beta * dy]
+            tr_loss[i, j] = err
+
+    contour_plot(grid, tr_loss, coords, vmax=5.0, log_alpha=-5.0, N=7, path=path)
+
+def plot_mode_connections():
+    seq_1 = flatten_params(load_model('{}/t_{}_seq.pth'.format(EXP_DIR, 1)).to(DEVICE))
+    seq_2 = flatten_params(load_model('{}/t_{}_seq.pth'.format(EXP_DIR, 2)).to(DEVICE))
+    # seq_3 = flatten_params(load_model('{}/t_{}_seq.pth'.format(EXP_DIR, 3)).to(DEVICE))
+
+    mtl_2 = flatten_params(load_model('{}/t_{}_mtl.pth'.format(EXP_DIR, 2)).to(DEVICE))
+    # mtl_3 = flatten_params(load_model('{}/t_{}_mtl.pth'.format(EXP_DIR, 3)).to(DEVICE))
+
+    # lmc_2 = flatten_params(load_model('{}/t_{}_lcm.pth'.format(EXP_DIR, 2)).to(DEVICE))
+    # lmc_3 = flatten_params(load_model('{}/t_{}_lcm.pth'.format(EXP_DIR, 3)).to(DEVICE))
+
+
+    eval_loader = loaders['sequential'][1]['val']
+    loss, accs, ts = check_mode_connectivity(seq_1, mtl_2, eval_loader)
+    plot_interpolation(ts, accs, 'seq 1 <-> mtl 2', path=EXP_DIR+'/seq1_mtl2_accs.png')
+    plot_interpolation(ts, loss, 'seq 1 <-> mtl 2', path=EXP_DIR+'/seq1_mtl2_loss.png')
+    plot_loss_plane([seq1, seq_2, mtl_2], eval_loader, path=EXP_DIR+'/task1_loss_plane.png')
+
+    eval_loader = loaders['sequential'][2]['val']
+    loss, accs, ts = check_mode_connectivity(seq_2, mtl_2, eval_loader)
+    plot_interpolation(ts, accs, 'seq 2 <-> mtl 2', path=EXP_DIR+'/seq2_mtl2_accs.png')
+    plot_interpolation(ts, loss, 'seq 2 <-> mtl 2', path=EXP_DIR+'/seq2_mtl2_loss.png')
+    plot_loss_plane([seq1, seq_2, mtl_2], eval_loader, path=EXP_DIR+'/task2_loss_plane.png')
+
+
 
 def main():
     print(TRIAL_ID)
@@ -200,20 +276,39 @@ def main():
 
         if task > 1:
             accs, losses = [], []
-            print('---- Task {} (lcm) ----'.format(task))
+            accs_mtl, losses_mtl = [], []
+            
+            print('---- Task {} (mtl) ----'.format(task))
+            mtl_model = train_task_MTL(task, config)
+
+            print('---- Task {} (lmc) ----'.format(task))
             lmc_model = train_task_lmc(task, config)
             for prev_task in range(1, task+1):
                 metrics = eval_single_epoch(lmc_model, loaders['sequential'][prev_task]['val'])
+                metrics_mtl =  eval_single_epoch(mtl_model, loaders['sequential'][prev_task]['val'])
+
                 accs.append(metrics['accuracy'])
+                accs_mtl.append(metrics_mtl['accuracy'])
+
                 losses.append(metrics['loss'])
+                losses_mtl.append(metrics_mtl['loss'])
                 
-                print(prev_task, metrics)
+                print('LMC >> ', prev_task, metrics)
+                print('MTL >> ', prev_task, metrics_mtl)
                 log_comet_metric(experiment, 't_{}_lmc_acc'.format(prev_task), metrics['accuracy'], task)
                 log_comet_metric(experiment, 't_{}_lmc_loss'.format(prev_task), round(metrics['loss'], 5), task)
-            log_comet_metric(experiment, 'avg_acc', np.mean(accs),task)
-            log_comet_metric(experiment, 'avg_loss', np.mean(losses),task)
-            
+                log_comet_metric(experiment, 't_{}_mtl_acc'.format(prev_task), metrics_mtl['accuracy'], task)
+                log_comet_metric(experiment, 't_{}_mtl_loss'.format(prev_task), round(metrics_mtl['loss'], 5), task)
+            log_comet_metric(experiment, 'avg_acc_lmc', np.mean(accs),task)
+            log_comet_metric(experiment, 'avg_loss_lmc', np.mean(losses),task)
+            log_comet_metric(experiment, 'avg_acc_mtl', np.mean(accs_mtl),task)
+            log_comet_metric(experiment, 'avg_loss_mtl', np.mean(losses_mtl),task)
+    
         print()
+
+    plot_mode_connections()
+    plot_loss_landscapes()
+
     experiment.log_asset_folder(EXP_DIR)
     experiment.end()
 

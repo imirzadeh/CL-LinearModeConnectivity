@@ -81,7 +81,7 @@ def get_xy(point, origin, vector_x, vector_y):
 
 
 
-def plot(x, y, title, path):
+def plot_interpolation(x, y, title, path):
     sns.set(style="whitegrid")
     sns.set_context("paper",rc={"lines.linewidth": 3,
                     'xtick.labelsize':18,
@@ -95,8 +95,8 @@ def plot(x, y, title, path):
     color = 'green' if 'acc' in path else 'orange'
     suffix = 'acc' if 'acc' in path else 'loss'
     plt.plot(x, y, color=color)
-    plt.xlabel('interpolation')
-    plt.ylabel('validation {}'.format(suffix))
+    plt.xlabel('Interpolation')
+    plt.ylabel('Val {}'.format(suffix))
     plt.title(title)
     # plt.ylim((0.0, 0.005))
     plt.tight_layout()
@@ -117,7 +117,7 @@ class LogNormalize(colors.Normalize):
         return 0.9 * (log_v - self.log_alpha) / (np.log(self.vmax - self.vmin) - self.log_alpha)
 
 
-def contour_plot(grid, values, coords, vmax=None, log_alpha=-5, N=7, cmap='jet_r'):
+def contour_plot(grid, values, coords, vmax=None, log_alpha=-5, N=7, path='default.png', cmap='jet_r'):
     rc('text', usetex=True)
     matplotlib.rcParams['text.latex.preamble'] = [r'\usepackage{amsmath}']
     
@@ -162,7 +162,7 @@ def contour_plot(grid, values, coords, vmax=None, log_alpha=-5, N=7, cmap='jet_r
     plt.yticks(fontsize=18)
     plt.xticks(fontsize=18)
     colorbar.ax.tick_params(labelsize=18)
-    plt.savefig('loss_plane.png', dpi=300, bbox_inches='tight')
+    plt.savefig(path, dpi=300, bbox_inches='tight')
     plt.close()
 
 if __name__ == "__main__":

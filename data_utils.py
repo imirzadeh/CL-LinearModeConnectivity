@@ -216,11 +216,12 @@ def get_multitask_cifar100_loaders(num_tasks, batch_size, num_examples):
 
 def get_all_loaders(dataset, num_tasks, bs_inter, bs_intra, num_examples, per_task_rotation=9):
     dataset = dataset.lower()
-    loaders = {'sequential': {},  'multitask':  {}, 'subset': {} }
+    loaders = {'sequential': {},  'multitask':  {}, 'subset': {}, 'full-multitask': {}}
 
     print('loading multitask {}'.format(dataset))
     if 'cifar' in dataset:
         loaders['multitask'] = get_multitask_cifar100_loaders(num_tasks, bs_inter, num_examples)
+        loaders['full-multitask'] = get_multitask_cifar100_loaders(num_tasks, bs_inter, num_tasks*5*300)
     elif 'rot' in dataset and 'mnist' in dataset:
         loaders['multitask'] = get_multitask_rotated_mnist(num_tasks, bs_inter, num_examples, per_task_rotation)
     else:
