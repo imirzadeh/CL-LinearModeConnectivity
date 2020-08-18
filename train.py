@@ -20,10 +20,10 @@ EXP_DIR = './checkpoints/{}'.format(TRIAL_ID)
 
 
 config = {'num_tasks': 2, 'per_task_rotation': 10, 'trial': TRIAL_ID,\
-          'memory_size': 200, 'num_lmc_samples': 10, 'lcm_init': 0.5,
-          'lr_inter': 0.005, 'epochs_inter': 2, 'bs_inter': 16, 
-          'lr_intra': 0.01, 'epochs_intra': 5,  'bs_intra': 32,
-          'lr_mtl':0.01, 'epochs_mtl': 20,
+          'memory_size': 100, 'num_lmc_samples': 10, 'lcm_init': 0.4,
+          'lr_inter': 0.01, 'epochs_inter': 10, 'bs_inter': 32, 
+          'lr_intra': 0.01, 'epochs_intra': 20,  'bs_intra': 32,
+          'lr_mtl':0.01, 'epochs_mtl': 15,
          }
 
 #config = nni.get_next_parameter()
@@ -207,8 +207,8 @@ def plot_loss_plane(w, eval_loader, path, lmc=False):
     coords = np.stack(get_xy(p, w[0], u, v) for p in w)
     print("coords", coords)
 
-    G = 10
-    margin = 0.2
+    G = 12
+    margin = 0.25
     alphas = np.linspace(0.0 - margin, 1.0 + margin, G)
     betas = np.linspace(0.0 - margin, 1.0 + margin, G)
     tr_loss = np.zeros((G, G))
@@ -224,7 +224,7 @@ def plot_loss_plane(w, eval_loader, path, lmc=False):
             grid[i, j] = [alpha * dx, beta * dy]
             tr_loss[i, j] = err
 
-    contour_plot(grid, tr_loss, coords, vmax=0.5, log_alpha=-5.0, N=7, path=path, lmc=lmc)
+    contour_plot(grid, tr_loss, coords, vmax=0.4, log_alpha=-5.0, N=10, path=path, lmc=lmc)
 
 def plot_mode_connections():
     seq_1 = flatten_params(load_model('{}/t_{}_seq.pth'.format(EXP_DIR, 1)).to(DEVICE))
