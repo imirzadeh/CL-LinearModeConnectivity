@@ -20,9 +20,9 @@ EXP_DIR = './checkpoints/{}'.format(TRIAL_ID)
 
 
 config = {'num_tasks': 2, 'per_task_rotation': 10, 'trial': TRIAL_ID,\
-          'memory_size': 100, 'num_lmc_samples': 10, 'lcm_init': 0.4,
-          'lr_inter': 0.01, 'epochs_inter': 10, 'bs_inter': 32, 
-          'lr_intra': 0.01, 'epochs_intra': 20,  'bs_intra': 32,
+          'memory_size': 200, 'num_lmc_samples': 10, 'lcm_init': 0.4,
+          'lr_inter': 0.01, 'epochs_inter': 10, 'bs_inter': 64, 
+          'lr_intra': 0.01, 'epochs_intra': 20,  'bs_intra': 64,
           'lr_mtl':0.01, 'epochs_mtl': 15,
          }
 
