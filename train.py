@@ -23,7 +23,7 @@ config = {'num_tasks': 3, 'per_task_rotation': 10, 'trial': TRIAL_ID,\
           'memory_size': 500, 'num_lmc_samples': 10, 'lcm_init': 0.5,
           'lr_inter': 0.01, 'epochs_inter': 3, 'bs_inter': 32, 
           'lr_intra': 0.01, 'epochs_intra': 15,  'bs_intra': 32,
-          'lr_mtl':0.01, 'epochs_mtl': 15,
+          'lr_mtl':0.01, 'epochs_mtl': 20,
          }
 
 #config = nni.get_next_parameter()
@@ -282,6 +282,18 @@ def plot_mode_connections():
 
     w_labels = [r"$\hat{w}_1$", r"$w^*_{3}$", r"$\hat{w}_3$"]
     plot_loss_plane([seq_1, mtl_3, seq_3], eval_loader, path=EXP_DIR+'/task2_surface_mtl3_3.png', w_labels=w_labels)
+
+    #------------------------- task 2 ----------------------
+    eval_loader = loaders['sequential'][3]['val']
+    loss, accs, ts = check_mode_connectivity(seq_3, mtl_3, eval_loader)
+    plot_interpolation(ts, accs, 'seq 3 to mtl 3', path=EXP_DIR+'/seq3_mtl3_accs.png')
+    plot_interpolation(ts, loss, 'seq 3 to mtl 3', path=EXP_DIR+'/seq3_mtl3_loss.png')
+
+    w_labels = [r"$\hat{w}_3$", r"$w^*_{3}$", r"$\hat{w}_1$"]
+    plot_loss_plane([seq_3, mtl_2, seq_1], eval_loader, path=EXP_DIR+'/task3_surface_mtl3_1.png', w_labels=w_labels)
+
+    w_labels = [r"$\hat{w}_3$", r"$w^*_{3}$", r"$\hat{w}_2$"]
+    plot_loss_plane([seq_3, mtl_2, seq_1], eval_loader, path=EXP_DIR+'/task3_surface_mtl3_2.png', w_labels=w_labels)
 
 
 def main():
