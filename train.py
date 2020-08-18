@@ -224,7 +224,7 @@ def plot_loss_plane(w, eval_loader, path, lmc=False):
             grid[i, j] = [alpha * dx, beta * dy]
             tr_loss[i, j] = err
 
-    contour_plot(grid, tr_loss, coords, vmax=5.0, log_alpha=-5.0, N=7, path=path, lmc=lmc)
+    contour_plot(grid, tr_loss, coords, vmax=0.5, log_alpha=-5.0, N=7, path=path, lmc=lmc)
 
 def plot_mode_connections():
     seq_1 = flatten_params(load_model('{}/t_{}_seq.pth'.format(EXP_DIR, 1)).to(DEVICE))

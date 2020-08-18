@@ -117,7 +117,7 @@ class LogNormalize(colors.Normalize):
         return 0.9 * (log_v - self.log_alpha) / (np.log(self.vmax - self.vmin) - self.log_alpha)
 
 
-def contour_plot(grid, values, coords, vmax=None, log_alpha=-5, N=7, path='default.png', cmap='jet_r', lmc=False):
+def contour_plot(grid, values, coords, vmax=None, log_alpha=-5, N=5, path='default.png', cmap='jet_r', lmc=False):
     rc('text', usetex=True)
     matplotlib.rcParams['text.latex.preamble'] = [r'\usepackage{amsmath}']
     
@@ -133,13 +133,13 @@ def contour_plot(grid, values, coords, vmax=None, log_alpha=-5, N=7, path='defau
     levels = np.sort(np.concatenate((levels, [1e10])))
 
     # print(levels)
-    # norm = LogNormalize(clipped.min() - 1e-8, clipped.max() + 1e-8, log_alpha=log_alpha)
-    contour = plt.contour(grid[:, :, 0], grid[:, :, 1], values, cmap=cmap,
+    norm = LogNormalize(clipped.min() - 1e-8, clipped.max() + 1e-8, log_alpha=log_alpha)
+    contour = plt.contour(grid[:, :, 0], grid[:, :, 1], values, cmap=cmap, norm=norm,
                           linewidths=2.5,
                           zorder=1,
-                          levels=10)
-    contourf = plt.contourf(grid[:, :, 0], grid[:, :, 1], values, cmap=cmap,
-                            levels=10,
+                          levels=levels)
+    contourf = plt.contourf(grid[:, :, 0], grid[:, :, 1], values, cmap=cmap, norm=norm,
+                            levels=levels,
                             zorder=0,
                             alpha=0.5)
     colorbar = plt.colorbar(format='%.2g')
