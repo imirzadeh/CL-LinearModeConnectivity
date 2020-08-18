@@ -19,10 +19,10 @@ TRIAL_ID =  os.environ.get('NNI_TRIAL_JOB_ID', get_random_string(5))
 EXP_DIR = './checkpoints/{}'.format(TRIAL_ID)
 
 
-config = {'num_tasks': 2, 'per_task_rotation': 10, 'trial': TRIAL_ID,\
+config = {'num_tasks': 3, 'per_task_rotation': 10, 'trial': TRIAL_ID,\
           'memory_size': 500, 'num_lmc_samples': 10, 'lcm_init': 0.5,
-          'lr_inter': 0.01, 'epochs_inter': 5, 'bs_inter': 32, 
-          'lr_intra': 0.01, 'epochs_intra': 25,  'bs_intra': 32,
+          'lr_inter': 0.01, 'epochs_inter': 3, 'bs_inter': 32, 
+          'lr_intra': 0.01, 'epochs_intra': 10,  'bs_intra': 32,
           'lr_mtl':0.01, 'epochs_mtl': 10,
          }
 
@@ -182,7 +182,7 @@ def log_comet_metric(exp, name, val, step):
 def check_mode_connectivity(w1, w2, eval_loader):
     net = load_model('{}/{}.pth'.format(EXP_DIR, 'init')).to(DEVICE)
     loss_history, acc_history, ts = [], [], []
-    for t in np.arange(0.0, 1.01, 0.05):
+    for t in np.arange(0.0, 1.01, 0.025):
         ts.append(t)
         net = assign_weights(net, w1 + t*(w2-w1)).to(DEVICE)
         metrics = eval_single_epoch(net, eval_loader)
@@ -191,7 +191,7 @@ def check_mode_connectivity(w1, w2, eval_loader):
     return loss_history, acc_history, ts
 
 
-def plot_loss_plane(w, eval_loader, path, lmc=False):
+def plot_loss_plane(w, eval_loader, path, w_labels=[]):
 
     u = w[2] - w[0]
     dx = np.linalg.norm(u)
@@ -224,42 +224,64 @@ def plot_loss_plane(w, eval_loader, path, lmc=False):
             grid[i, j] = [alpha * dx, beta * dy]
             tr_loss[i, j] = err
 
-    contour_plot(grid, tr_loss, coords, vmax=0.4, log_alpha=-5.0, N=10, path=path, lmc=lmc)
+    contour_plot(grid, tr_loss, coords, vmax=0.4, log_alpha=-5.0, N=10, path=path, w_labels=w_labels)
 
 def plot_mode_connections():
+    # w_labels = [r"$\hat{w}_1$", r"$\hat{w}_\text{lmc}$", r"$\hat{w}_2$"]
+
     seq_1 = flatten_params(load_model('{}/t_{}_seq.pth'.format(EXP_DIR, 1)).to(DEVICE))
     seq_2 = flatten_params(load_model('{}/t_{}_seq.pth'.format(EXP_DIR, 2)).to(DEVICE))
-    # seq_3 = flatten_params(load_model('{}/t_{}_seq.pth'.format(EXP_DIR, 3)).to(DEVICE))
+    seq_3 = flatten_params(load_model('{}/t_{}_seq.pth'.format(EXP_DIR, 3)).to(DEVICE))
 
     mtl_2 = flatten_params(load_model('{}/t_{}_mtl.pth'.format(EXP_DIR, 2)).to(DEVICE))
-    # mtl_3 = flatten_params(load_model('{}/t_{}_mtl.pth'.format(EXP_DIR, 3)).to(DEVICE))
+    mtl_3 = flatten_params(load_model('{}/t_{}_mtl.pth'.format(EXP_DIR, 3)).to(DEVICE))
 
     lmc_2 = flatten_params(load_model('{}/t_{}_lcm.pth'.format(EXP_DIR, 2)).to(DEVICE))
-    # lmc_3 = flatten_params(load_model('{}/t_{}_lcm.pth'.format(EXP_DIR, 3)).to(DEVICE))
+    lmc_3 = flatten_params(load_model('{}/t_{}_lcm.pth'.format(EXP_DIR, 3)).to(DEVICE))
 
-
+    #------------------------- task 1 ----------------------
     eval_loader = loaders['sequential'][1]['val']
     loss, accs, ts = check_mode_connectivity(seq_1, mtl_2, eval_loader)
-    plot_interpolation(ts, accs, 'seq 1 <-> mtl 2', path=EXP_DIR+'/seq1_mtl2_accs.png')
-    plot_interpolation(ts, loss, 'seq 1 <-> mtl 2', path=EXP_DIR+'/seq1_mtl2_loss.png')
-    plot_loss_plane([seq_1, mtl_2, seq_2], eval_loader, path=EXP_DIR+'/task1_surface_mtl.png')
+    plot_interpolation(ts, accs, 'seq 1 to mtl 2', path=EXP_DIR+'/seq1_mtl2_accs.png')
+    plot_interpolation(ts, loss, 'seq 1 to mtl 2', path=EXP_DIR+'/seq1_mtl2_loss.png')
+    w_labels = [r"$\hat{w}_1$", r"$w^*_{2}$", r"$\hat{w}_2$"]
+    plot_loss_plane([seq_1, mtl_2, seq_2], eval_loader, path=EXP_DIR+'/task1_surface_mtl2_2.png', w_labels=w_labels)
 
-    loss, accs, ts = check_mode_connectivity(seq_1, lmc_2, eval_loader)
-    plot_interpolation(ts, accs, 'seq 1 <-> lmc 2', path=EXP_DIR+'/seq1_lmc2_accs.png')
-    plot_interpolation(ts, loss, 'seq 1 <-> lmc 2', path=EXP_DIR+'/seq1_lmc2_loss.png')
-    plot_loss_plane([seq_1, lmc_2, seq_2], eval_loader, path=EXP_DIR+'/task1_surface_lmc.png', lmc=True)
+    loss, accs, ts = check_mode_connectivity(seq_1, mtl_3, eval_loader)
+    plot_interpolation(ts, accs, 'seq 1 to mtl 3', path=EXP_DIR+'/seq1_mtl3_accs.png')
+    plot_interpolation(ts, loss, 'seq 1 to mtl 3', path=EXP_DIR+'/seq1_mtl3_loss.png')
+    w_labels = [r"$\hat{w}_1$", r"$w^*_{3}$", r"$\hat{w}_2$"]
+    plot_loss_plane([seq_1, mtl_3, seq_2], eval_loader, path=EXP_DIR+'/task1_surface_mtl3_2.png', w_labels=w_labels)
 
+    w_labels = [r"$\hat{w}_1$", r"$w^*_{3}$", r"$\hat{w}_3$"]
+    plot_loss_plane([seq_1, mtl_3, seq_3], eval_loader, path=EXP_DIR+'/task1_surface_mtl3_3.png', w_labels=w_labels)
+
+    # loss, accs, ts = check_mode_connectivity(seq_1, lmc_2, eval_loader)
+    # plot_interpolation(ts, accs, 'seq 1 to lmc 2', path=EXP_DIR+'/seq1_lmc2_accs.png')
+    # plot_interpolation(ts, loss, 'seq 1 to lmc 2', path=EXP_DIR+'/seq1_lmc2_loss.png')
+    # plot_loss_plane([seq_1, lmc_2, seq_2], eval_loader, path=EXP_DIR+'/task1_surface_lmc2.png', w_labels=w_labels)
+
+    # loss, accs, ts = check_mode_connectivity(seq_1, lmc_3, eval_loader)
+    # plot_interpolation(ts, accs, 'seq 1 to lmc 3', path=EXP_DIR+'/seq1_lmc3_accs.png')
+    # plot_interpolation(ts, loss, 'seq 1 to lmc 3', path=EXP_DIR+'/seq1_lmc3_loss.png')
+    # plot_loss_plane([seq_1, lmc_3, seq_2], eval_loader, path=EXP_DIR+'/task1_surface_lmc3.png', w_labels=w_labels)
+
+    #------------------------- task 2 ----------------------
     eval_loader = loaders['sequential'][2]['val']
     loss, accs, ts = check_mode_connectivity(seq_2, mtl_2, eval_loader)
-    plot_interpolation(ts, accs, 'seq 2 <-> mtl 2', path=EXP_DIR+'/seq2_mtl2_accs.png')
-    plot_interpolation(ts, loss, 'seq 2 <-> mtl 2', path=EXP_DIR+'/seq2_mtl2_loss.png')
-    plot_loss_plane([seq_1, mtl_2, seq_2], eval_loader, path=EXP_DIR+'/task2_surface_mtl.png')
+    plot_interpolation(ts, accs, 'seq 2 to mtl 2', path=EXP_DIR+'/seq2_mtl2_accs.png')
+    plot_interpolation(ts, loss, 'seq 2 to mtl 2', path=EXP_DIR+'/seq2_mtl2_loss.png')
+    w_labels = [r"$\hat{w}_1$", r"$w^*_{2}$", r"$\hat{w}_2$"]
+    plot_loss_plane([seq_1, mtl_2, seq_2], eval_loader, path=EXP_DIR+'/task2_surface_mtl2_2.png', w_labels=w_labels)
 
-    loss, accs, ts = check_mode_connectivity(seq_2, lmc_2, eval_loader)
-    plot_interpolation(ts, accs, 'seq 2 <-> lmc 2', path=EXP_DIR+'/seq2_lmc2_accs.png')
-    plot_interpolation(ts, loss, 'seq 2 <-> lmc 2', path=EXP_DIR+'/seq2_lmc2_loss.png')
-    plot_loss_plane([seq_1, lmc_2, seq_2], eval_loader, path=EXP_DIR+'/task2_surface_lmc.png', lmc=True)
+    loss, accs, ts = check_mode_connectivity(seq_2, mtl_3, eval_loader)
+    plot_interpolation(ts, accs, 'seq 2 to mtl 3', path=EXP_DIR+'/seq2_mtl3_accs.png')
+    plot_interpolation(ts, loss, 'seq 2 to mtl 3', path=EXP_DIR+'/seq2_mtl3_loss.png')
+    w_labels = [r"$\hat{w}_1$", r"$w^*_{3}$", r"$\hat{w}_2$"]
+    plot_loss_plane([seq_1, mtl_3, seq_2], eval_loader, path=EXP_DIR+'/task2_surface_mtl3_2.png', w_labels=w_labels)
 
+    w_labels = [r"$\hat{w}_1$", r"$w^*_{3}$", r"$\hat{w}_3$"]
+    plot_loss_plane([seq_1, mtl_3, seq_3], eval_loader, path=EXP_DIR+'/task2_surface_mtl3_3.png', w_labels=w_labels)
 
 
 def main():
