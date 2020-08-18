@@ -21,8 +21,8 @@ EXP_DIR = './checkpoints/{}'.format(TRIAL_ID)
 
 config = {'num_tasks': 2, 'per_task_rotation': 10, 'trial': TRIAL_ID,\
           'memory_size': 200, 'num_lmc_samples': 10, 'lcm_init': 0.1,
-          'lr_inter': 0.01, 'epochs_inter': 2, 'bs_inter': 64, \
-          'lr_intra': 0.01, 'epochs_intra': 2,  'bs_intra': 64,
+          'lr_inter': 0.01, 'epochs_inter': 10, 'bs_inter': 64, \
+          'lr_intra': 0.01, 'epochs_intra': 10,  'bs_intra': 64,
          }
 
 #config = nni.get_next_parameter()
@@ -100,7 +100,7 @@ def train_task_MTL(task, config):
     model = load_model('{}/t_{}_mtl.pth'.format(EXP_DIR, task-1)).to(DEVICE)
     train_loader = loaders['full-multitask'][task]['train']
     optimizer = torch.optim.SGD(model.parameters(), lr=config['lr_intra'], momentum=0.8)
-    for epoch in range(config['epochs_intra']):
+    for epoch in range(2*config['epochs_intra']):
         model = train_single_epoch(model, optimizer, train_loader)
     save_model(model, '{}/t_{}_mtl.pth'.format(EXP_DIR, task))
     return model
@@ -241,13 +241,13 @@ def plot_mode_connections():
     loss, accs, ts = check_mode_connectivity(seq_1, mtl_2, eval_loader)
     plot_interpolation(ts, accs, 'seq 1 <-> mtl 2', path=EXP_DIR+'/seq1_mtl2_accs.png')
     plot_interpolation(ts, loss, 'seq 1 <-> mtl 2', path=EXP_DIR+'/seq1_mtl2_loss.png')
-    plot_loss_plane([seq_1, seq_2, mtl_2], eval_loader, path=EXP_DIR+'/task1_loss_plane.png')
+    plot_loss_plane([seq_1, mtl_2, seq_2], eval_loader, path=EXP_DIR+'/task1_loss_plane.png')
 
     eval_loader = loaders['sequential'][2]['val']
     loss, accs, ts = check_mode_connectivity(seq_2, mtl_2, eval_loader)
     plot_interpolation(ts, accs, 'seq 2 <-> mtl 2', path=EXP_DIR+'/seq2_mtl2_accs.png')
     plot_interpolation(ts, loss, 'seq 2 <-> mtl 2', path=EXP_DIR+'/seq2_mtl2_loss.png')
-    plot_loss_plane([seq_1, seq_2, mtl_2], eval_loader, path=EXP_DIR+'/task2_loss_plane.png')
+    plot_loss_plane([seq_1, mtl_2, seq_2], eval_loader, path=EXP_DIR+'/task2_loss_plane.png')
 
 
 
