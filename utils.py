@@ -26,7 +26,7 @@ def load_model(path):
     model = torch.load(path)
     return model
 
-def flatten_params(m, numpy_output=False):
+def flatten_params(m, numpy_output=True):
     total_params = []
     for param in m.parameters():
             total_params.append(param.view(-1))
@@ -151,7 +151,7 @@ def contour_plot(grid, values, coords, vmax=None, log_alpha=-5, N=7, path='defau
     plt.text(coords[0, 0]+0.5, coords[0, 1]+0.5, r"$\hat{w}_1$", fontsize=20)
     
     plt.scatter(coords[1, 0], coords[1, 1], marker='o', c='k', s=120, zorder=2)
-    plt.text(coords[1, 0]+0.5, coords[1, 1]+0.5, r"$\hat{w}_\text{joint}$", fontsize=20)
+    plt.text(coords[1, 0]+0.5, coords[1, 1]+0.5, r"$\hat{w}_\text{mtl}$", fontsize=20)
 
     plt.scatter(coords[2, 0], coords[2, 1], marker='o', c='k', s=120, zorder=2)
     plt.text(coords[2, 0]+0.5, coords[2, 1]+0.5, r"$\hat{w}_2$", fontsize=20)

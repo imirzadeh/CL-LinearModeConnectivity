@@ -8,7 +8,7 @@ import torch.nn as nn
 from models import MLP, ResNet18
 from data_utils import get_all_loaders
 from utils import save_model,load_model, get_norm_distance, get_cosine_similarity, plot_interpolation
-from utils import  plot, flatten_params, assign_weights, get_xy, contour_plot, get_random_string, assign_grads
+from utils import  flatten_params, assign_weights, get_xy, contour_plot, get_random_string, assign_grads
 import uuid
 from pathlib import Path
 
@@ -21,11 +21,11 @@ EXP_DIR = './checkpoints/{}'.format(TRIAL_ID)
 
 config = {'num_tasks': 2, 'per_task_rotation': 10, 'trial': TRIAL_ID,\
           'memory_size': 200, 'num_lmc_samples': 10, 'lcm_init': 0.1,
-          'lr_inter': 0.01, 'epochs_inter': 10, 'bs_inter': 16, \
-          'lr_intra': 0.01, 'epochs_intra': 10,  'bs_intra': 16,
+          'lr_inter': 0.01, 'epochs_inter': 2, 'bs_inter': 64, \
+          'lr_intra': 0.01, 'epochs_intra': 2,  'bs_intra': 64,
          }
 
-config = nni.get_next_parameter()
+#config = nni.get_next_parameter()
 config['trial'] = TRIAL_ID
 
 experiment = Experiment(api_key="1UNrcJdirU9MEY0RC3UCU7eAg", \
@@ -213,15 +213,13 @@ def plot_loss_plane(w, eval_loader, path):
     tr_loss = np.zeros((G, G))
     grid = np.zeros((G, G, 2))
 
-    loader = get_multitask_rotated_mnist(2, BATCH_SIZE, 200)[0]
-
     for i, alpha in enumerate(alphas):
         for j, beta in enumerate(betas):
             p = w[0] + alpha * dx * u + beta * dy * v
-            m = assign_weights(net, p).to(DEVICE)
+            m = assign_weights(m, p).to(DEVICE)
             err = eval_single_epoch(m, eval_loader)['loss']
             c = get_xy(p, w[0], u, v)
-            print(c)
+            #print(c)
             grid[i, j] = [alpha * dx, beta * dy]
             tr_loss[i, j] = err
 
@@ -243,13 +241,13 @@ def plot_mode_connections():
     loss, accs, ts = check_mode_connectivity(seq_1, mtl_2, eval_loader)
     plot_interpolation(ts, accs, 'seq 1 <-> mtl 2', path=EXP_DIR+'/seq1_mtl2_accs.png')
     plot_interpolation(ts, loss, 'seq 1 <-> mtl 2', path=EXP_DIR+'/seq1_mtl2_loss.png')
-    plot_loss_plane([seq1, seq_2, mtl_2], eval_loader, path=EXP_DIR+'/task1_loss_plane.png')
+    plot_loss_plane([seq_1, seq_2, mtl_2], eval_loader, path=EXP_DIR+'/task1_loss_plane.png')
 
     eval_loader = loaders['sequential'][2]['val']
     loss, accs, ts = check_mode_connectivity(seq_2, mtl_2, eval_loader)
     plot_interpolation(ts, accs, 'seq 2 <-> mtl 2', path=EXP_DIR+'/seq2_mtl2_accs.png')
     plot_interpolation(ts, loss, 'seq 2 <-> mtl 2', path=EXP_DIR+'/seq2_mtl2_loss.png')
-    plot_loss_plane([seq1, seq_2, mtl_2], eval_loader, path=EXP_DIR+'/task2_loss_plane.png')
+    plot_loss_plane([seq_1, seq_2, mtl_2], eval_loader, path=EXP_DIR+'/task2_loss_plane.png')
 
 
 
@@ -307,7 +305,7 @@ def main():
         print()
 
     plot_mode_connections()
-    plot_loss_landscapes()
+    #plot_loss_landscapes()
 
     experiment.log_asset_folder(EXP_DIR)
     experiment.end()
