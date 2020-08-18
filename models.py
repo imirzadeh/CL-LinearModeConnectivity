@@ -9,6 +9,7 @@ from torch.nn.functional import relu, avg_pool2d
 import torch.nn.init as init
 
 BN_MOMENTUM=0.2
+BN_AFFINE=True
 
 class MLP(nn.Module):
     """
@@ -47,9 +48,9 @@ class BasicBlock(nn.Module):
     def __init__(self, in_planes, planes, stride=1, config={}):
         super(BasicBlock, self).__init__()
         self.conv1 = conv3x3(in_planes, planes, stride)
-        self.bn1 = nn.BatchNorm2d(planes, affine=False, track_running_stats=False, momentum=BN_MOMENTUM)
+        self.bn1 = nn.BatchNorm2d(planes, affine=BN_AFFINE, track_running_stats=False, momentum=BN_MOMENTUM)
         self.conv2 = conv3x3(planes, planes)
-        self.bn2 = nn.BatchNorm2d(planes, affine=False, track_running_stats=False, momentum=BN_MOMENTUM)
+        self.bn2 = nn.BatchNorm2d(planes, affine=BN_AFFINE, track_running_stats=False, momentum=BN_MOMENTUM)
 
         self.shortcut = nn.Sequential()
         if stride != 1 or in_planes != self.expansion * planes:
@@ -73,7 +74,7 @@ class ResNet(nn.Module):
         self.in_planes = nf
 
         self.conv1 = conv3x3(3, nf * 1)
-        self.bn1 = nn.BatchNorm2d(nf * 1, affine=False, track_running_stats=False, momentum=BN_MOMENTUM)
+        self.bn1 = nn.BatchNorm2d(nf * 1, affine=BN_AFFINE, track_running_stats=False, momentum=BN_MOMENTUM)
         self.layer1 = self._make_layer(block, nf * 1, num_blocks[0], stride=1, config=config)
         self.layer2 = self._make_layer(block, nf * 2, num_blocks[1], stride=2, config=config)
         self.layer3 = self._make_layer(block, nf * 4, num_blocks[2], stride=2, config=config)
