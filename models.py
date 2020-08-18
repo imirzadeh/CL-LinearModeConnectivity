@@ -8,7 +8,7 @@ from torch.nn.functional import relu, avg_pool2d
 
 import torch.nn.init as init
 
-BN_MOMENTUM=0.2
+BN_MOMENTUM=0.05
 BN_AFFINE=True
 
 class MLP(nn.Module):
