@@ -20,9 +20,10 @@ EXP_DIR = './checkpoints/{}'.format(TRIAL_ID)
 
 
 config = {'num_tasks': 2, 'per_task_rotation': 10, 'trial': TRIAL_ID,\
-          'memory_size': 200, 'num_lmc_samples': 10, 'lcm_init': 0.1,
-          'lr_inter': 0.01, 'epochs_inter': 10, 'bs_inter': 64, \
-          'lr_intra': 0.01, 'epochs_intra': 10,  'bs_intra': 64,
+          'memory_size': 200, 'num_lmc_samples': 10, 'lcm_init': 0.5,
+          'lr_inter': 0.005, 'epochs_inter': 2, 'bs_inter': 16, 
+          'lr_intra': 0.01, 'epochs_intra': 5,  'bs_intra': 32,
+          'lr_mtl':0.01, 'epochs_mtl': 20,
          }
 
 #config = nni.get_next_parameter()
@@ -99,8 +100,8 @@ def train_task_MTL(task, config):
     assert task >= 2
     model = load_model('{}/t_{}_mtl.pth'.format(EXP_DIR, task-1)).to(DEVICE)
     train_loader = loaders['full-multitask'][task]['train']
-    optimizer = torch.optim.SGD(model.parameters(), lr=config['lr_intra'], momentum=0.8)
-    for epoch in range(2*config['epochs_intra']):
+    optimizer = torch.optim.SGD(model.parameters(), lr=config['lr_mtl'], momentum=0.8)
+    for epoch in range(config['epochs_mtl']):
         model = train_single_epoch(model, optimizer, train_loader)
     save_model(model, '{}/t_{}_mtl.pth'.format(EXP_DIR, task))
     return model
@@ -158,7 +159,7 @@ def train_task_lmc(task, config):
     loader_prev = loaders['multitask'][task]['train']
     loader_curr = loaders['subset'][task]['train']
     optimizer = torch.optim.SGD(model_lmc.parameters(), lr=config['lr_inter'], momentum=0.8)
-    factor = 2 if task == config['num_tasks'] else 1
+    factor = 1 if task == config['num_tasks'] else 1
     for epoch in range(factor*config['epochs_inter']): 
         model_lmc.train()
         optimizer.zero_grad()
