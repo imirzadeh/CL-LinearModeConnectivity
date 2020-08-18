@@ -190,7 +190,7 @@ def check_mode_connectivity(w1, w2, eval_loader):
     return loss_history, acc_history, ts
 
 
-def plot_loss_plane(w, eval_loader, path):
+def plot_loss_plane(w, eval_loader, path, lmc=False):
 
     u = w[2] - w[0]
     dx = np.linalg.norm(u)
@@ -223,7 +223,7 @@ def plot_loss_plane(w, eval_loader, path):
             grid[i, j] = [alpha * dx, beta * dy]
             tr_loss[i, j] = err
 
-    contour_plot(grid, tr_loss, coords, vmax=5.0, log_alpha=-5.0, N=7, path=path)
+    contour_plot(grid, tr_loss, coords, vmax=5.0, log_alpha=-5.0, N=7, path=path, lmc=lmc)
 
 def plot_mode_connections():
     seq_1 = flatten_params(load_model('{}/t_{}_seq.pth'.format(EXP_DIR, 1)).to(DEVICE))
@@ -246,7 +246,7 @@ def plot_mode_connections():
     loss, accs, ts = check_mode_connectivity(seq_1, lmc_2, eval_loader)
     plot_interpolation(ts, accs, 'seq 1 <-> lmc 2', path=EXP_DIR+'/seq1_lmc2_accs.png')
     plot_interpolation(ts, loss, 'seq 1 <-> lmc 2', path=EXP_DIR+'/seq1_lmc2_loss.png')
-    plot_loss_plane([seq_1, lmc_2, seq_2], eval_loader, path=EXP_DIR+'/task1_surface_lmc.png')
+    plot_loss_plane([seq_1, lmc_2, seq_2], eval_loader, path=EXP_DIR+'/task1_surface_lmc.png', lmc=True)
 
     eval_loader = loaders['sequential'][2]['val']
     loss, accs, ts = check_mode_connectivity(seq_2, mtl_2, eval_loader)
@@ -257,7 +257,7 @@ def plot_mode_connections():
     loss, accs, ts = check_mode_connectivity(seq_2, lmc_2, eval_loader)
     plot_interpolation(ts, accs, 'seq 2 <-> lmc 2', path=EXP_DIR+'/seq2_lmc2_accs.png')
     plot_interpolation(ts, loss, 'seq 2 <-> lmc 2', path=EXP_DIR+'/seq2_lmc2_loss.png')
-    plot_loss_plane([seq_1, lmc_2, seq_2], eval_loader, path=EXP_DIR+'/task2_surface_lmc.png')
+    plot_loss_plane([seq_1, lmc_2, seq_2], eval_loader, path=EXP_DIR+'/task2_surface_lmc.png', lmc=True)
 
 
 
