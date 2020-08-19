@@ -103,6 +103,29 @@ def plot_interpolation(x, y, title, path):
     plt.savefig(path, dpi=300)
     plt.close()
 
+def plot_multi_interpolation(x, ys, y_labels, path):
+    sns.set(style="whitegrid")
+    sns.set_context("paper",rc={"lines.linewidth": 3,
+                    'xtick.labelsize':18,
+                    'ytick.labelsize':18,
+                    'lines.markersize' : 15,
+                    'legend.fontsize': 18,
+                    'axes.labelsize': 18,
+                    'legend.handlelength': 1,
+                    'legend.handleheight':1,})
+
+    colors = ['blue', 'orange', 'green']
+    suffix = 'Acc' if 'acc' in path else 'Loss'
+    for i, y in enumerate(ys):
+        plt.plot(x, y, color=colors[i], label=y_labels[i])
+    plt.xlabel('Interpolation')
+    plt.ylabel('Validation {}'.format(suffix))
+    # plt.title(title)
+    plt.legend(title='Paths')
+    # plt.ylim((0.0, 0.005))
+    plt.tight_layout()
+    plt.savefig(path, dpi=300)
+    plt.close()
 
 
 class LogNormalize(colors.Normalize):
@@ -119,7 +142,7 @@ class LogNormalize(colors.Normalize):
 
 def contour_plot(grid, values, coords, vmax=None, log_alpha=-5, N=5, path='default.png', cmap='jet_r', w_labels=[]):
     rc('text', usetex=True)
-    matplotlib.rcParams['text.latex.preamble'] = [r'\usepackage{amsmath}']
+    matplotlib.rcParams['text.latex.preamble'] = r'\usepackage{amsmath}'
     
     cmap = plt.get_cmap(cmap)
     if vmax is None:
@@ -137,9 +160,9 @@ def contour_plot(grid, values, coords, vmax=None, log_alpha=-5, N=5, path='defau
     contour = plt.contour(grid[:, :, 0], grid[:, :, 1], values, cmap=cmap, norm=norm,
                           linewidths=2.5,
                           zorder=1,
-                          levels=7)
+                          levels=levels)
     contourf = plt.contourf(grid[:, :, 0], grid[:, :, 1], values, cmap=cmap, norm=norm,
-                            levels=7,
+                            levels=levels,
                             zorder=0,
                             alpha=0.5)
     colorbar = plt.colorbar(format='%.2g')

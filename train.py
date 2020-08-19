@@ -256,6 +256,9 @@ def plot_mode_connections():
     w_labels = [r"$\hat{w}_1$", r"$w^*_{3}$", r"$\hat{w}_3$"]
     plot_loss_plane([seq_1, mtl_3, seq_3], eval_loader, path=EXP_DIR+'/task1_surface_mtl3_3.png', w_labels=w_labels)
 
+    loss_1, _, ts =  check_mode_connectivity(seq_1, mtl_2, eval_loader)
+    loss_2, _, ts = check_mode_connectivity(seq_1, seq_2, eval_loader)
+    plot_interpolation(ts, [loss_1, loss_2], ,[r"$\hat{w}_1 to w^*_{2} $", r"$\hat{w}_1 to \hat{w}_2$"]  path=EXP_DIR+'/task1_compare_paths.png')
     # loss, accs, ts = check_mode_connectivity(seq_1, lmc_2, eval_loader)
     # plot_interpolation(ts, accs, 'seq 1 to lmc 2', path=EXP_DIR+'/seq1_lmc2_accs.png')
     # plot_interpolation(ts, loss, 'seq 1 to lmc 2', path=EXP_DIR+'/seq1_lmc2_loss.png')
@@ -283,6 +286,10 @@ def plot_mode_connections():
     w_labels = [r"$\hat{w}_1$", r"$w^*_{3}$", r"$\hat{w}_3$"]
     plot_loss_plane([seq_1, mtl_3, seq_3], eval_loader, path=EXP_DIR+'/task2_surface_mtl3_3.png', w_labels=w_labels)
 
+    loss_1, _, ts =  check_mode_connectivity(seq_2, mtl_2, eval_loader)
+    loss_2, _, ts = check_mode_connectivity(seq_2, seq_1, eval_loader)
+    plot_interpolation(ts, [loss_1, loss_2], ,[r"$\hat{w}_2 to w^*_{2} $", r"$\hat{w}_2 to \hat{w}_1$"]  path=EXP_DIR+'/task2_compare_paths.png')
+
     #------------------------- task 2 ----------------------
     eval_loader = loaders['sequential'][3]['val']
     loss, accs, ts = check_mode_connectivity(seq_3, mtl_3, eval_loader)
@@ -294,6 +301,13 @@ def plot_mode_connections():
 
     w_labels = [r"$\hat{w}_3$", r"$w^*_{3}$", r"$\hat{w}_2$"]
     plot_loss_plane([seq_3, mtl_2, seq_1], eval_loader, path=EXP_DIR+'/task3_surface_mtl3_2.png', w_labels=w_labels)
+
+    loss_1, _, ts =  check_mode_connectivity(seq_3, mtl_3, eval_loader)
+    loss_2, _, ts = check_mode_connectivity(seq_3, seq_1, eval_loader)
+    loss_3, _, ts = check_mode_connectivity(seq_3, seq_2, eval_loader)
+
+    plot_interpolation(ts, [loss_1, loss_2, loss_3], ,[r"$\hat{w}_3 to w^*_{3} $", r"$\hat{w}_3 to \hat{w}_1$", r"$\hat{w}_3 to \hat{w}_2$"]  path=EXP_DIR+'/task3_compare_paths.png')
+
 
 
 def main():
