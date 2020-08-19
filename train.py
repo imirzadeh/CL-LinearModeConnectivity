@@ -222,13 +222,13 @@ def plot_loss_plane(w, eval_loader, path, w_labels=[]):
         for j, beta in enumerate(betas):
             p = w[0] + alpha * dx * u + beta * dy * v
             m = assign_weights(m, p).to(DEVICE)
-            err = eval_single_epoch(m, eval_loader)['loss']
+            err = 100.0-eval_single_epoch(m, eval_loader)['accuracy']
             c = get_xy(p, w[0], u, v)
             #print(c)
             grid[i, j] = [alpha * dx, beta * dy]
             tr_loss[i, j] = err
 
-    contour_plot(grid, tr_loss, coords, vmax=0.4, log_alpha=-3.0, N=10, path=path, w_labels=w_labels)
+    contour_plot(grid, tr_loss, coords, log_alpha=-5.0, N=10, path=path, w_labels=w_labels)
 
 def plot_mode_connections():
     # w_labels = [r"$\hat{w}_1$", r"$\hat{w}_\text{lmc}$", r"$\hat{w}_2$"]
