@@ -23,8 +23,8 @@ EXP_DIR = './checkpoints/{}'.format(TRIAL_ID)
 config = {'num_tasks': 3, 'per_task_rotation': 10, 'trial': TRIAL_ID,\
           'memory_size': 500, 'num_lmc_samples': 10, 'lcm_init': 0.5,
           'lr_inter': 0.01, 'epochs_inter': 3, 'bs_inter': 64, 
-          'lr_intra': 0.01, 'epochs_intra': 25,  'bs_intra': 64,
-          'lr_mtl':0.02, 'epochs_mtl': 35,
+          'lr_intra': 0.01, 'epochs_intra': 15,  'bs_intra': 64,
+          'lr_mtl':0.01, 'epochs_mtl': 30,
          }
 
 
@@ -103,7 +103,7 @@ def train_task_MTL(task, config):
     model = load_model('{}/t_{}_mtl.pth'.format(EXP_DIR, task-1)).to(DEVICE)
     train_loader = loaders['full-multitask'][task]['train']
     optimizer = torch.optim.SGD(model.parameters(), lr=config['lr_mtl'], momentum=0.8)
-    scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=10, gamma=0.5)
+    scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=100, gamma=0.5)
     for epoch in range(config['epochs_mtl']):
         model = train_single_epoch(model, optimizer, train_loader)
         scheduler.step()
