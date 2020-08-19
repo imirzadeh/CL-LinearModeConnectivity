@@ -24,7 +24,7 @@ config = {'num_tasks': 3, 'per_task_rotation': 10, 'trial': TRIAL_ID,\
           'memory_size': 500, 'num_lmc_samples': 10, 'lcm_init': 0.5,
           'lr_inter': 0.01, 'epochs_inter': 3, 'bs_inter': 32, 
           'lr_intra': 0.01, 'epochs_intra': 25,  'bs_intra': 32,
-          'lr_mtl':0.05, 'epochs_mtl': 42,
+          'lr_mtl':0.02, 'epochs_mtl': 25,
          }
 
 
