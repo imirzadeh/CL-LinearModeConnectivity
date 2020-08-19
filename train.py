@@ -9,6 +9,7 @@ from models import MLP, ResNet18
 from data_utils import get_all_loaders
 from utils import save_model,load_model, get_norm_distance, get_cosine_similarity, plot_interpolation
 from utils import  flatten_params, assign_weights, get_xy, contour_plot, get_random_string, assign_grads
+from utils import plot_multi_interpolation
 import uuid
 from pathlib import Path
 
@@ -22,9 +23,10 @@ EXP_DIR = './checkpoints/{}'.format(TRIAL_ID)
 config = {'num_tasks': 3, 'per_task_rotation': 10, 'trial': TRIAL_ID,\
           'memory_size': 500, 'num_lmc_samples': 10, 'lcm_init': 0.5,
           'lr_inter': 0.01, 'epochs_inter': 3, 'bs_inter': 32, 
-          'lr_intra': 0.01, 'epochs_intra': 20,  'bs_intra': 32,
-          'lr_mtl':0.02, 'epochs_mtl': 35,
+          'lr_intra': 0.01, 'epochs_intra': 25,  'bs_intra': 32,
+          'lr_mtl':0.05, 'epochs_mtl': 42,
          }
+
 
 #config = nni.get_next_parameter()
 config['trial'] = TRIAL_ID
@@ -101,8 +103,10 @@ def train_task_MTL(task, config):
     model = load_model('{}/t_{}_mtl.pth'.format(EXP_DIR, task-1)).to(DEVICE)
     train_loader = loaders['full-multitask'][task]['train']
     optimizer = torch.optim.SGD(model.parameters(), lr=config['lr_mtl'], momentum=0.8)
+    scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=10, gamma=0.5)
     for epoch in range(config['epochs_mtl']):
         model = train_single_epoch(model, optimizer, train_loader)
+        scheduler.step()
     save_model(model, '{}/t_{}_mtl.pth'.format(EXP_DIR, task))
     return model
 
@@ -258,7 +262,7 @@ def plot_mode_connections():
 
     loss_1, _, ts =  check_mode_connectivity(seq_1, mtl_2, eval_loader)
     loss_2, _, ts = check_mode_connectivity(seq_1, seq_2, eval_loader)
-    plot_interpolation(ts, [loss_1, loss_2], ,[r"$\hat{w}_1 to w^*_{2} $", r"$\hat{w}_1 to \hat{w}_2$"]  path=EXP_DIR+'/task1_compare_paths.png')
+    plot_multi_interpolation(ts, [loss_1, loss_2], [r"$\hat{w}_1 ~ \rightarrow ~ w^*_{2} $", r"$\hat{w}_1 ~ \rightarrow ~ \hat{w}_2$"], path=EXP_DIR+'/task1_compare_paths.png')
     # loss, accs, ts = check_mode_connectivity(seq_1, lmc_2, eval_loader)
     # plot_interpolation(ts, accs, 'seq 1 to lmc 2', path=EXP_DIR+'/seq1_lmc2_accs.png')
     # plot_interpolation(ts, loss, 'seq 1 to lmc 2', path=EXP_DIR+'/seq1_lmc2_loss.png')
@@ -288,7 +292,7 @@ def plot_mode_connections():
 
     loss_1, _, ts =  check_mode_connectivity(seq_2, mtl_2, eval_loader)
     loss_2, _, ts = check_mode_connectivity(seq_2, seq_1, eval_loader)
-    plot_interpolation(ts, [loss_1, loss_2], ,[r"$\hat{w}_2 to w^*_{2} $", r"$\hat{w}_2 to \hat{w}_1$"]  path=EXP_DIR+'/task2_compare_paths.png')
+    plot_multi_interpolation(ts, [loss_1, loss_2], [r"$\hat{w}_2 ~\rightarrow ~ w^*_{2} $", r"$\hat{w}_2 ~ \rightarrow ~ \hat{w}_1$"], path=EXP_DIR+'/task2_compare_paths.png')
 
     #------------------------- task 2 ----------------------
     eval_loader = loaders['sequential'][3]['val']
@@ -306,7 +310,7 @@ def plot_mode_connections():
     loss_2, _, ts = check_mode_connectivity(seq_3, seq_1, eval_loader)
     loss_3, _, ts = check_mode_connectivity(seq_3, seq_2, eval_loader)
 
-    plot_interpolation(ts, [loss_1, loss_2, loss_3], ,[r"$\hat{w}_3 to w^*_{3} $", r"$\hat{w}_3 to \hat{w}_1$", r"$\hat{w}_3 to \hat{w}_2$"]  path=EXP_DIR+'/task3_compare_paths.png')
+    plot_multi_interpolation(ts, [loss_1, loss_2, loss_3], [r"$\hat{w}_3 ~ \rightarrow ~  w^*_{3} $", r"$\hat{w}_3 ~ \rightarrow ~ \hat{w}_1$", r"$\hat{w}_3 ~ \rightarrow ~ \hat{w}_2$"], path=EXP_DIR+'/task3_compare_paths.png')
 
 
 

@@ -117,7 +117,7 @@ def plot_multi_interpolation(x, ys, y_labels, path):
     colors = ['blue', 'orange', 'green']
     suffix = 'Acc' if 'acc' in path else 'Loss'
     for i, y in enumerate(ys):
-        plt.plot(x, y, color=colors[i], label=y_labels[i])
+        plt.plot(x, ys[i], color=colors[i], label=y_labels[i])
     plt.xlabel('Interpolation')
     plt.ylabel('Validation {}'.format(suffix))
     # plt.title(title)
@@ -140,7 +140,7 @@ class LogNormalize(colors.Normalize):
         return 0.9 * (log_v - self.log_alpha) / (np.log(self.vmax - self.vmin) - self.log_alpha)
 
 
-def contour_plot(grid, values, coords, vmax=None, log_alpha=-5, N=5, path='default.png', cmap='jet_r', w_labels=[]):
+def contour_plot(grid, values, coords, vmax=None, log_alpha=-5, N=7, path='default.png', cmap='jet_r', w_labels=[]):
     rc('text', usetex=True)
     matplotlib.rcParams['text.latex.preamble'] = r'\usepackage{amsmath}'
     
@@ -156,13 +156,13 @@ def contour_plot(grid, values, coords, vmax=None, log_alpha=-5, N=5, path='defau
     levels = np.sort(np.concatenate((levels, [1])))
 
     # print(levels)
-    norm = LogNormalize(clipped.min() - 1e-8, clipped.max() + 1e-8, log_alpha=log_alpha)
-    contour = plt.contour(grid[:, :, 0], grid[:, :, 1], values, cmap=cmap, norm=norm,
+    #norm = LogNormalize(clipped.min() - 1e-8, clipped.max() + 1e-8, log_alpha=log_alpha)
+    contour = plt.contour(grid[:, :, 0], grid[:, :, 1], values, cmap=cmap,# norm=norm,
                           linewidths=2.5,
-                          zorder=1,
-                          levels=levels)
-    contourf = plt.contourf(grid[:, :, 0], grid[:, :, 1], values, cmap=cmap, norm=norm,
-                            levels=levels,
+                          zorder=7,
+                          levels=8)
+    contourf = plt.contourf(grid[:, :, 0], grid[:, :, 1], values, cmap=cmap,# norm=norm,
+                            levels=8,
                             zorder=0,
                             alpha=0.5)
     colorbar = plt.colorbar(format='%.2g')
