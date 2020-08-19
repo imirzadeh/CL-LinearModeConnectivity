@@ -130,23 +130,23 @@ def contour_plot(grid, values, coords, vmax=None, log_alpha=-5, N=5, path='defau
     levels = clipped.min() + np.exp(log_alpha + log_gamma * np.arange(N + 1))
     levels[0] = clipped.min()
     levels[-1] = clipped.max()
-    levels = np.sort(np.concatenate((levels, [1e10])))
+    levels = np.sort(np.concatenate((levels, [1])))
 
     # print(levels)
     norm = LogNormalize(clipped.min() - 1e-8, clipped.max() + 1e-8, log_alpha=log_alpha)
-    contour = plt.contour(grid[:, :, 0], grid[:, :, 1], values, cmap=cmap, #norm=norm,
+    contour = plt.contour(grid[:, :, 0], grid[:, :, 1], values, cmap=cmap, norm=norm,
                           linewidths=2.5,
                           zorder=1,
                           levels=7)
-    contourf = plt.contourf(grid[:, :, 0], grid[:, :, 1], values, cmap=cmap, #norm=norm,
+    contourf = plt.contourf(grid[:, :, 0], grid[:, :, 1], values, cmap=cmap, norm=norm,
                             levels=7,
                             zorder=0,
                             alpha=0.5)
     colorbar = plt.colorbar(format='%.2g')
 
-    # labels = list(colorbar.ax.get_yticklabels())
-    # labels[-1].set_text(r'$>\,$' + labels[-2].get_text())
-    # colorbar.ax.set_yticklabels(labels)
+    labels = list(colorbar.ax.get_yticklabels())
+    labels[-1].set_text(r'$>\,$' + labels[-2].get_text())
+    colorbar.ax.set_yticklabels(labels)
     plt.scatter(coords[0, 0], coords[0, 1], marker='o', c='k', s=120, zorder=2)
 
     plt.text(coords[0, 0]+0.05, coords[0, 1]+0.05, w_labels[0], fontsize=20)

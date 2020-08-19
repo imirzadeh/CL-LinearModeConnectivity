@@ -22,8 +22,8 @@ EXP_DIR = './checkpoints/{}'.format(TRIAL_ID)
 config = {'num_tasks': 3, 'per_task_rotation': 10, 'trial': TRIAL_ID,\
           'memory_size': 500, 'num_lmc_samples': 10, 'lcm_init': 0.5,
           'lr_inter': 0.01, 'epochs_inter': 3, 'bs_inter': 32, 
-          'lr_intra': 0.01, 'epochs_intra': 15,  'bs_intra': 32,
-          'lr_mtl':0.01, 'epochs_mtl': 20,
+          'lr_intra': 0.01, 'epochs_intra': 20,  'bs_intra': 32,
+          'lr_mtl':0.02, 'epochs_mtl': 35,
          }
 
 #config = nni.get_next_parameter()
@@ -224,7 +224,7 @@ def plot_loss_plane(w, eval_loader, path, w_labels=[]):
             grid[i, j] = [alpha * dx, beta * dy]
             tr_loss[i, j] = err
 
-    contour_plot(grid, tr_loss, coords, vmax=0.4, log_alpha=-5.0, N=10, path=path, w_labels=w_labels)
+    contour_plot(grid, tr_loss, coords, vmax=0.4, log_alpha=-3.0, N=10, path=path, w_labels=w_labels)
 
 def plot_mode_connections():
     # w_labels = [r"$\hat{w}_1$", r"$\hat{w}_\text{lmc}$", r"$\hat{w}_2$"]
