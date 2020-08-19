@@ -153,16 +153,17 @@ def contour_plot(grid, values, coords, vmax=None, log_alpha=-5, N=7, path='defau
     levels = clipped.min() + np.exp(log_alpha + log_gamma * np.arange(N + 1))
     levels[0] = clipped.min()
     levels[-1] = clipped.max()
-    levels = np.sort(np.concatenate((levels, [1])))
+    levels = np.sort(np.concatenate((levels, [100])))
 
     # print(levels)
     #norm = LogNormalize(clipped.min() - 1e-8, clipped.max() + 1e-8, log_alpha=log_alpha)
+    levels = [35, 40, 50, 60, 70, 80, 90]
     contour = plt.contour(grid[:, :, 0], grid[:, :, 1], values, cmap=cmap,# norm=norm,
                           linewidths=2.5,
-                          zorder=7,
-                          levels=8)
+                          zorder=1,
+                          levels=levels)
     contourf = plt.contourf(grid[:, :, 0], grid[:, :, 1], values, cmap=cmap,# norm=norm,
-                            levels=8,
+                            levels=levels,
                             zorder=0,
                             alpha=0.5)
     colorbar = plt.colorbar(format='%.2g')

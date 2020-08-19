@@ -211,7 +211,7 @@ def plot_loss_plane(w, eval_loader, path, w_labels=[]):
     coords = np.stack(get_xy(p, w[0], u, v) for p in w)
     print("coords", coords)
 
-    G = 12
+    G = 10
     margin = 0.25
     alphas = np.linspace(0.0 - margin, 1.0 + margin, G)
     betas = np.linspace(0.0 - margin, 1.0 + margin, G)
@@ -222,7 +222,7 @@ def plot_loss_plane(w, eval_loader, path, w_labels=[]):
         for j, beta in enumerate(betas):
             p = w[0] + alpha * dx * u + beta * dy * v
             m = assign_weights(m, p).to(DEVICE)
-            err = 100.0-eval_single_epoch(m, eval_loader)['accuracy']
+            err = eval_single_epoch(m, eval_loader)['loss']
             c = get_xy(p, w[0], u, v)
             #print(c)
             grid[i, j] = [alpha * dx, beta * dy]
