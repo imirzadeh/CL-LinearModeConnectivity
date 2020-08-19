@@ -141,6 +141,7 @@ class LogNormalize(colors.Normalize):
 
 
 def contour_plot(grid, values, coords, vmax=None, log_alpha=-5, N=7, path='default.png', cmap='jet_r', w_labels=[]):
+    sns.set(style="ticks")
     rc('text', usetex=True)
     matplotlib.rcParams['text.latex.preamble'] = r'\usepackage{amsmath}'
     
@@ -158,6 +159,7 @@ def contour_plot(grid, values, coords, vmax=None, log_alpha=-5, N=7, path='defau
     # print(levels)
     #norm = LogNormalize(clipped.min() - 1e-8, clipped.max() + 1e-8, log_alpha=log_alpha)
     #levels = [35, 40, 50, 60, 70, 80, 90]
+    levels = [0.04, 0.05, 0.06, 0.07, 0.08, 1.0]
     contour = plt.contour(grid[:, :, 0], grid[:, :, 1], values, cmap=cmap,# norm=norm,
                           linewidths=2.5,
                           zorder=1,
@@ -188,7 +190,7 @@ def contour_plot(grid, values, coords, vmax=None, log_alpha=-5, N=7, path='defau
     plt.yticks(fontsize=18)
     plt.xticks(fontsize=18)
     colorbar.ax.tick_params(labelsize=18)
-    plt.savefig(path, dpi=300, bbox_inches='tight')
+    plt.savefig(path, dpi=200, bbox_inches='tight')
     plt.close()
 
 if __name__ == "__main__":
