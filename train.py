@@ -22,9 +22,9 @@ EXP_DIR = './checkpoints/{}'.format(TRIAL_ID)
 
 config = {'num_tasks': 3, 'per_task_rotation': 10, 'trial': TRIAL_ID,\
           'memory_size': 500, 'num_lmc_samples': 10, 'lcm_init': 0.5,
-          'lr_inter': 0.01, 'epochs_inter': 3, 'bs_inter': 32, 
-          'lr_intra': 0.01, 'epochs_intra': 50,  'bs_intra': 32,
-          'lr_mtl':0.01, 'epochs_mtl': 45,
+          'lr_inter': 0.01, 'epochs_inter': 3, 'bs_inter': 128, 
+          'lr_intra': 0.01, 'epochs_intra': 20,  'bs_intra': 128,
+          'lr_mtl':0.01, 'epochs_mtl': 30,
          }
 
 
@@ -57,10 +57,12 @@ def eval_single_epoch(net, loader):
     test_loss = 0
     correct = 0
     count = 0 # because of sampler
+    bcount = 0
     criterion = nn.CrossEntropyLoss().to(DEVICE)
 
     with torch.no_grad():
         for data, target, task_id in loader:
+            bcount += 1
             data = data.to(DEVICE)#.view(-1, 784)
             target = target.to(DEVICE)
             count += len(data)
@@ -68,7 +70,7 @@ def eval_single_epoch(net, loader):
             test_loss += criterion(output, target).item()
             pred = output.data.max(1, keepdim=True)[1]
             correct += pred.eq(target.data.view_as(pred)).sum()
-    test_loss /= count
+    test_loss /= bcount
     correct = correct.to('cpu')
     avg_acc = 100.0 * float(correct.numpy()) / count
     return {'accuracy': avg_acc, 'loss': test_loss}
