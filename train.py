@@ -70,7 +70,7 @@ def eval_single_epoch(net, loader):
             test_loss += criterion(output, target).item()
             pred = output.data.max(1, keepdim=True)[1]
             correct += pred.eq(target.data.view_as(pred)).sum()
-    test_loss /= bcount
+    test_loss /= count
     correct = correct.to('cpu')
     avg_acc = 100.0 * float(correct.numpy()) / count
     return {'accuracy': avg_acc, 'loss': test_loss}
@@ -96,7 +96,7 @@ def train_task_sequentially(task, config):
 
     save_model(model, '{}/t_{}_seq.pth'.format(EXP_DIR, task))
     if task == 1:
-        save_model(model, '{}/t_{}_lcm.pth'.format(EXP_DIR, task))
+        save_model(model, '{}/t_{}_lmc.pth'.format(EXP_DIR, task))
         save_model(model, '{}/t_{}_mtl.pth'.format(EXP_DIR, task))
     return model
 
@@ -151,7 +151,7 @@ def get_clf_loss(net, loader):
 
 def train_task_lmc(task, config):
     assert task > 1
-    model_prev = load_model('{}/t_{}_lcm.pth'.format(EXP_DIR, task-1)).to(DEVICE)
+    model_prev = load_model('{}/t_{}_lmc.pth'.format(EXP_DIR, task-1)).to(DEVICE)
     model_curr = load_model('{}/t_{}_seq.pth'.format(EXP_DIR, task)).to(DEVICE)
 
     w_prev = flatten_params(model_prev, numpy_output=True)
@@ -177,7 +177,7 @@ def train_task_lmc(task, config):
         for prev_task in range(1, task+1):
             print("LMC Debug >> epoch {} >> metric {} >> {}".format(epoch+1, prev_task, eval_single_epoch(model_lmc, loaders['sequential'][prev_task]['val'])))
         print()
-    save_model(model_lmc, '{}/t_{}_lcm.pth'.format(EXP_DIR, task))
+    save_model(model_lmc, '{}/t_{}_lmc.pth'.format(EXP_DIR, task))
     return model_lmc
 
 
@@ -242,8 +242,8 @@ def plot_mode_connections():
     mtl_2 = flatten_params(load_model('{}/t_{}_mtl.pth'.format(EXP_DIR, 2)).to(DEVICE))
     mtl_3 = flatten_params(load_model('{}/t_{}_mtl.pth'.format(EXP_DIR, 3)).to(DEVICE))
 
-    lmc_2 = flatten_params(load_model('{}/t_{}_lcm.pth'.format(EXP_DIR, 2)).to(DEVICE))
-    lmc_3 = flatten_params(load_model('{}/t_{}_lcm.pth'.format(EXP_DIR, 3)).to(DEVICE))
+    lmc_2 = flatten_params(load_model('{}/t_{}_lmc.pth'.format(EXP_DIR, 2)).to(DEVICE))
+    lmc_3 = flatten_params(load_model('{}/t_{}_lmc.pth'.format(EXP_DIR, 3)).to(DEVICE))
 
     #------------------------- task 1 ----------------------
     eval_loader = loaders['sequential'][1]['val']
