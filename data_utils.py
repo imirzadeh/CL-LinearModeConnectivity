@@ -18,12 +18,12 @@ def fast_mnist_loader(loaders, device='cpu'):
     for data, target in train_loader:
         data = data.to(device).view(-1, 784)
         target = target.to(device)
-        trains.append([data, target])
+        trains.append([data, target, None])
 
     for data, target in eval_loader:
         data = data.to(device).view(-1, 784)
         target = target.to(device)
-        evals.append([data, target])
+        evals.append([data, target, None])
 
     return trains, evals
 
