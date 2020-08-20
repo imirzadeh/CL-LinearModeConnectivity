@@ -78,7 +78,7 @@ def eval_single_epoch(net, loader):
 
 def setup_experiment():
     Path(EXP_DIR).mkdir(parents=True, exist_ok=True)
-    init_model = ResNet18()#MLP(HIDDENS, 10)
+    init_model = ResNet18() if 'cifar' in DATASET else MLP(HIDDENS, 10)
     save_model(init_model, '{}/init.pth'.format(EXP_DIR))
     experiment.log_parameters(config)
 
