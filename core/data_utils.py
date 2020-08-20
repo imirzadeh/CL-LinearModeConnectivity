@@ -1,4 +1,5 @@
 import numpy as np
+import random
 import torch
 import torchvision
 from torch.utils.data import TensorDataset, DataLoader, Dataset, ConcatDataset
@@ -10,7 +11,7 @@ from torchvision.datasets import MNIST
 import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
-PER_TASK_ROATATION = 9
+# PER_TASK_ROATATION = 9
 
 def fast_mnist_loader(loaders, device='cpu'):
     train_loader, eval_loader = loaders
@@ -54,21 +55,7 @@ class RotationTransform:
         return TorchVisionFunc.rotate(x, self.angle, fill=(0,))
 
 
-def get_rotated_mnist_tasks(num_tasks, batch_size, per_task_rotation=PER_TASK_ROATATION):
-    """
-    Returns data loaders for all tasks of rotation MNIST dataset.
-    :param num_tasks: number of tasks in the benchmark.
-    :param batch_size:
-    :return:
-    """
-    datasets = {}
-    for task_id in range(1, num_tasks+1):
-        train_loader, test_loader = get_rotated_mnist(task_id, batch_size, per_task_rotation)
-        datasets[task_id] = {'train': train_loader, 'test': test_loader}
-    return datasets
-
-
-def get_rotated_mnist(task_id, batch_size, per_task_rotation=PER_TASK_ROATATION):
+def get_rotated_mnist(task_id, batch_size, per_task_rotation):
     """
     Returns the dataset for a single task of Rotation MNIST dataset
     :param task_id:
@@ -89,15 +76,13 @@ def get_rotated_mnist(task_id, batch_size, per_task_rotation=PER_TASK_ROATATION)
     return train_loader, test_loader
 
 
-def get_subset_rotated_mnist(task_id, batch_size, num_examples, per_task_rotation=PER_TASK_ROATATION):
+def get_subset_rotated_mnist(task_id, batch_size, num_examples, per_task_rotation):
     # per_task_rotation = PER_TASK_ROATATION
-    
+
     trains = []
     tests = []
     for i in [task_id]:
         rotation_degree = (i - 1)*per_task_rotation
-        # rotation_degree -= (np.random.random()*per_task_rotation)
-
         transforms = torchvision.transforms.Compose([
                             RotationTransform(rotation_degree),
                             torchvision.transforms.ToTensor(),
@@ -111,8 +96,6 @@ def get_subset_rotated_mnist(task_id, batch_size, num_examples, per_task_rotatio
     train_datasets = ConcatDataset(trains)
     test_datasets = ConcatDataset(tests)
 
-
-    
     # num_examples = num_examples_per_task * num_tasks
     sampler = torch.utils.data.RandomSampler(train_datasets, replacement=True, num_samples=num_examples)
 
@@ -121,10 +104,9 @@ def get_subset_rotated_mnist(task_id, batch_size, num_examples, per_task_rotatio
 
     return train_loader, test_loader
 
-def get_multitask_rotated_mnist(num_tasks, batch_size, num_examples, per_task_rotation=PER_TASK_ROATATION):
-    per_task_rotation = PER_TASK_ROATATION
+def get_multitask_rotated_mnist(num_tasks, batch_size, num_examples, per_task_rotation):
     num_examples_per_task = num_examples//num_tasks
-    
+
     trains = []
     tests = []
     all_mtl_data = {}
@@ -134,7 +116,7 @@ def get_multitask_rotated_mnist(num_tasks, batch_size, num_examples, per_task_ro
         train_loader, test_loader = fast_mnist_loader(get_subset_rotated_mnist(task, batch_size, num_examples_per_task, per_task_rotation))
         trains += train_loader
         tests += test_loader
-        all_mtl_data[task]['train'] = trains[:]
+        all_mtl_data[task]['train'] = random.sample(trains[:], len(trains))
         all_mtl_data[task]['val'] = tests[:]
 
 
@@ -224,6 +206,8 @@ def get_all_loaders(dataset, num_tasks, bs_inter, bs_intra, num_examples, per_ta
         loaders['full-multitask'] = get_multitask_cifar100_loaders(num_tasks, bs_inter, num_tasks*5*500)
     elif 'rot' in dataset and 'mnist' in dataset:
         loaders['multitask'] = get_multitask_rotated_mnist(num_tasks, bs_inter, num_examples, per_task_rotation)
+        loaders['full-multitask'] = get_multitask_rotated_mnist(num_tasks, bs_inter, num_tasks*10*2000, per_task_rotation)
+
     else:
         raise Exception("{} not implemented!".format(dataset))
 
@@ -247,27 +231,6 @@ def get_all_loaders(dataset, num_tasks, bs_inter, bs_intra, num_examples, per_ta
         loaders['sequential'][task]['train'], loaders['sequential'][task]['val'] = seq_loader_train, seq_loader_val
         loaders['subset'][task]['train'] = sub_loader_train
     return loaders
-
-
-# class FastMNIST(MNIST):
-#   def __init__(self, *args, **kwargs):
-#       super().__init__(*args, **kwargs)
-#       self.data = self.data.unsqueeze(1).float().div(255.0)
-#       self.data, self.targets = self.data.to('cpu'), self.targets.to('cpu')
-
-#   def __getitem__(self, index):
-#       """
-#       Args:
-#           index (int): Index
-
-#       Returns:
-#           tuple: (image, target) where target is index of the target class.
-#       """
-#       img, target = self.data[index], self.targets[index]
-#       if self.transform:
-#           img = self.transform(img)
-#       return img, target
-
 
 # if __name__ == "__main__":
 #     loaders = get_all_loaders('cifar', 5, 16, 16, 25, 10)
