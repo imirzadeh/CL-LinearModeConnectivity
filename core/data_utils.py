@@ -100,7 +100,7 @@ def get_subset_rotated_mnist(task_id, batch_size, num_examples, per_task_rotatio
     sampler = torch.utils.data.RandomSampler(train_datasets, replacement=True, num_samples=num_examples)
 
     train_loader = torch.utils.data.DataLoader(train_datasets,  batch_size=batch_size, sampler=sampler, shuffle=False, num_workers=4, pin_memory=True)
-    test_loader = torch.utils.data.DataLoader(test_datasets,  batch_size=256, shuffle=False, num_workers=4, pin_memory=True)
+    test_loader = torch.utils.data.DataLoader(test_datasets,  batch_size=256, shuffle=True, num_workers=4, pin_memory=True)
 
     return train_loader, test_loader
 
@@ -141,7 +141,7 @@ def get_split_cifar100(task_id, batch_size, cifar_train, cifar_test):
     target_test_idx = ((targets_test >= start_class) & (targets_test < end_class))
 
     train_loader = torch.utils.data.DataLoader(torch.utils.data.dataset.Subset(cifar_train, np.where(target_train_idx==1)[0]), batch_size=batch_size, shuffle=True)
-    test_loader = torch.utils.data.DataLoader(torch.utils.data.dataset.Subset(cifar_test, np.where(target_test_idx==1)[0]), batch_size=batch_size)
+    test_loader = torch.utils.data.DataLoader(torch.utils.data.dataset.Subset(cifar_test, np.where(target_test_idx==1)[0]), batch_size=batch_size, shuffle=True)
 
     return train_loader, test_loader
 
