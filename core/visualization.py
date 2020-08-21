@@ -77,12 +77,12 @@ def plot_heat_map(matrix, labels, path, xlabel='', ylabel=''):
     # matrix = np.vectorize(lambda x: np.round(x, 2))(matrix)
     sns.set(style="ticks")
     sns.set_context("paper",rc={"lines.linewidth": 2.5,
-                    'xtick.labelsize':24,
-                    'ytick.labelsize':24,
+                    'xtick.labelsize':22,
+                    'ytick.labelsize':22,
                     'lines.markersize' : 15,
                     'legend.fontsize': 24,
-                    'axes.labelsize': 24,
-                    'axes.titlesize': 24,
+                    'axes.labelsize': 22,
+                    'axes.titlesize': 22,
                     'legend.handlelength': 1,
                     'legend.handleheight':1,})
     rc('text', usetex=True)
@@ -90,7 +90,8 @@ def plot_heat_map(matrix, labels, path, xlabel='', ylabel=''):
     
     ax = sns.heatmap(matrix, annot=True, fmt='.2f', cbar=True, \
         vmin=0, vmax=1, xticklabels=labels, yticklabels=labels,\
-        annot_kws={'size': 22}, cmap='YlGnBu')
+        annot_kws={'size': 21}, cmap='YlGnBu')
+    ax.set_yticklabels(ax.get_yticklabels(), rotation = 0)
     
     plt.xlabel(xlabel)
     plt.ylabel(ylabel)
