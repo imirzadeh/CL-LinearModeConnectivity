@@ -34,8 +34,8 @@ mtl_meter = ContinualMeter('mtl_accs', config['num_tasks'])
 #config = nni.get_next_parameter()
 config['trial'] = TRIAL_ID
 experiment = Experiment(api_key="1UNrcJdirU9MEY0RC3UCU7eAg", \
-                        project_name="explore-refactor-code", \
-                        workspace="cl-modeconnectivity", disabled=True)
+                        project_name="lmc-for-cl-rot-5", \
+                        workspace="cl-modeconnectivity", disabled=False)
 
 loaders = get_all_loaders(config['dataset'], config['num_tasks'],\
                          config['bs_inter'], config['bs_intra'],\
@@ -209,6 +209,17 @@ def plot_graphs(config):
     labels = [r"$\hat{w}_1$", r"$w^*_{2}$", r"$\hat{w}_2$"]
     plot_loss_plane([models['seq'][1], models['mtl'][2], models['seq'][2]], loaders['sequential'][2]['val'], path, labels, config)
 
+    path = '{}/surface_{}_{}_{}_{}_{}_{}_on_{}'.format(config['exp_dir'], 'seq', 1, 'mtl', 3, 'seq', 3,  1)
+    labels = [r"$\hat{w}_1$", r"$w^*_{3}$", r"$\hat{w}_3$"]
+    plot_loss_plane([models['seq'][1], models['mtl'][3], models['seq'][3]], loaders['sequential'][1]['val'], path, labels, config)
+
+    path = '{}/surface_{}_{}_{}_{}_{}_{}_on_{}'.format(config['exp_dir'], 'seq', 1, 'mtl', 3, 'seq', 3,  3)
+    labels = [r"$\hat{w}_1$", r"$w^*_{3}$", r"$\hat{w}_3$"]
+    plot_loss_plane([models['seq'][1], models['mtl'][3], models['seq'][3]], loaders['sequential'][3]['val'], path, labels, config)
+
+    path = '{}/surface_{}_{}_{}_{}_{}_{}_on_{}'.format(config['exp_dir'], 'seq', 2, 'mtl', 3, 'seq', 3,  2)
+    labels = [r"$\hat{w}_2$", r"$w^*_{3}$", r"$\hat{w}_3$"]
+    plot_loss_plane([models['seq'][2], models['mtl'][3], models['seq'][3]], loaders['sequential'][2]['val'], path, labels, config)
 
 def main():
     print('Started the trial >>', TRIAL_ID, 'for experiment 1')
