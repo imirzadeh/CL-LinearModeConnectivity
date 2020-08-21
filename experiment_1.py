@@ -13,7 +13,7 @@ from core.mode_connectivity import calculate_mode_connectivity
 from core.visualization import plot_contour, get_xy, plot_heat_map, plot_l2_map, plot_accs
 from core.visualization import plot_single_interpolation, plot_multi_interpolations
 
-DATASET = 'rot-mnist'
+DATASET = 'cifar'
 HIDDENS = 100
 DEVICE = 'cuda' if torch.cuda.is_available() else 'cpu'
 TRIAL_ID =  os.environ.get('NNI_TRIAL_JOB_ID', get_random_string(5))
@@ -34,7 +34,7 @@ mtl_meter = ContinualMeter('mtl_accs', config['num_tasks'])
 #config = nni.get_next_parameter()
 config['trial'] = TRIAL_ID
 experiment = Experiment(api_key="1UNrcJdirU9MEY0RC3UCU7eAg", \
-                        project_name="lmc-for-cl-rot-5", \
+                        project_name="lmc-for-cl-cifar-5", \
                         workspace="cl-modeconnectivity", disabled=False)
 
 loaders = get_all_loaders(config['dataset'], config['num_tasks'],\
