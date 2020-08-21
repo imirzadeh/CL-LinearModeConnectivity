@@ -191,7 +191,7 @@ def get_multitask_cifar100_loaders(num_tasks, batch_size, num_examples):
         train_loader, test_loader = fast_cifar_loader(get_subset_split_cifar100(task, batch_size, cifar_train, num_examples_per_task), task)
         trains += train_loader
         tests += test_loader
-        all_mtl_data[task]['train'] = trains[:]
+        all_mtl_data[task]['train'] = random.sample(trains[:], len(trains))#trains[:]
         all_mtl_data[task]['val'] = tests[:]
     return all_mtl_data
 
