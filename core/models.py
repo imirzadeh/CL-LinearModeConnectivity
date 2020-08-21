@@ -17,6 +17,8 @@ class MLP(nn.Module):
     """
     def __init__(self, hiddens, output):
         super(MLP, self).__init__()
+        self.save_acts = False
+        self.acts = {}
         self.W1 = nn.Linear(784, hiddens)    
         self.relu = nn.ReLU(inplace=True)
         self.W2 = nn.Linear(hiddens, hiddens)
@@ -27,9 +29,13 @@ class MLP(nn.Module):
         # x = x.view(-1, 784 + self.num_condition_neurons)
         out = self.W1(x)
         out = self.relu(out)
+        if self.save_acts:
+            self.acts['layer 1'] = out.detach().clone()
         # out = nn.functional.dropout(out, p=self.dropout_p)
         out = self.W2(out)
         out = self.relu(out)
+        if self.save_acts:
+            self.acts['layer 2'] = out.detach().clone()
         # out = nn.functional.dropout(out, p=self.dropout_p)
         out = self.W3(out)
         return out
@@ -72,6 +78,8 @@ class ResNet(nn.Module):
     def __init__(self, block, num_blocks, num_classes, nf, config={}):
         super(ResNet, self).__init__()
         self.in_planes = nf
+        self.save_acts = False
+        self.acts = {}
 
         self.conv1 = conv3x3(3, nf * 1)
         self.bn1 = nn.BatchNorm2d(nf * 1, affine=BN_AFFINE, track_running_stats=False, momentum=BN_MOMENTUM)
@@ -93,9 +101,21 @@ class ResNet(nn.Module):
         bsz = x.size(0)
         out = relu(self.bn1(self.conv1(x.view(bsz, 3, 32, 32))))
         out = self.layer1(out)
+        if self.save_acts:
+            self.acts['block 1'] = out.detach().clone()
+
         out = self.layer2(out)
+        if self.save_acts:
+            self.acts['block 2'] = out.detach().clone()
+
         out = self.layer3(out)
+        if self.save_acts:
+            self.acts['block 3'] = out.detach().clone()
+
         out = self.layer4(out)
+        if self.save_acts:
+            self.acts['block 4'] = out.detach().clone()
+
         out = avg_pool2d(out, 4)
         out = out.view(out.size(0), -1)
         out = self.linear(out)
