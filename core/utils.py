@@ -83,9 +83,9 @@ def assign_grads(m, grads):
     return m
 
 def get_norm_distance(m1, m2):
-    m1 = flatten_params(m1)
-    m2 = flatten_params(m2)
-    return torch.norm(m1-m2, 2)
+    m1 = flatten_params(m1, numpy_output=False)
+    m2 = flatten_params(m2, numpy_output=False)
+    return torch.norm(m1-m2, 2).item()
 
 
 def get_cosine_similarity(m1, m2):
@@ -104,6 +104,20 @@ def setup_experiment(experiment, config):
     init_model = ResNet18() if 'cifar' in config['dataset'] else MLP(config['mlp_hiddens'], 10)
     save_model(init_model, '{}/init.pth'.format(config['exp_dir']))
     experiment.log_parameters(config)
+
+
+class ContinualMeter:
+    def __init__(self, name, n_tasks):
+        self.name = name
+        self.data = np.zeros((n_tasks, n_tasks))
+
+    def update(self, current_task, target_task, metric):
+        self.data[current_task-1][target_task-1] = round(metric, 3)
+
+    def save(self, config):
+        path = '{}/{}.csv'.format(config['exp_dir'], self.name)
+        np.savetxt(path, self.data, delimiter=",")
+
 
 # if __name__ == "__main__":
 #     m = MLP(10, 10)#ResNet18() #MLP(10, 10)
