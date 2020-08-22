@@ -76,7 +76,7 @@ def plot_loss_plane(w, eval_loader, path, w_labels, config):
 
     contour = {'grid': grid, 'values': tr_loss, 'coords': coords}
     save_np_arrays(contour, path=path) 
-    plot_contour(grid, tr_loss, coords, log_alpha=-5.0, N=7, path=path, w_labels=w_labels, dataset=config['dataset'])
+    plot_contour(grid, tr_loss, coords, log_alpha=-5.0, N=7, path=path, w_labels=w_labels, dataset='wall')#config['dataset'])
     return contour
 
 def get_mode_connections(p1, t1, p2, t2, eval_task, config):
