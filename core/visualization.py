@@ -193,7 +193,7 @@ def plot_contour(grid, values, coords, vmax=None, log_alpha=-5, N=7, path='defau
     else:
         levels = 10
         clevels = 10
-        norm = matplotlib.colors.Normalize(min(values), max(values))
+        norm = None#matplotlib.colors.Normalize(min(values), max(values))
     contour = plt.contour(grid[:, :, 0], grid[:, :, 1], values, cmap=cmap, norm=norm,
                           linewidths=2.5,
                           zorder=1,
