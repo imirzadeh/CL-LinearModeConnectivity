@@ -13,7 +13,7 @@ from core.mode_connectivity import calculate_mode_connectivity
 from core.visualization import plot_contour, get_xy, plot_heat_map, plot_l2_map, plot_accs
 from core.visualization import plot_single_interpolation, plot_multi_interpolations
 
-DATASET = 'cifar'
+DATASET = 'rot-mnist'
 HIDDENS = 100
 DEVICE = 'cuda' if torch.cuda.is_available() else 'cpu'
 TRIAL_ID =  os.environ.get('NNI_TRIAL_JOB_ID', get_random_string(5))
@@ -22,9 +22,9 @@ EXP_DIR = './checkpoints/{}'.format(TRIAL_ID)
 
 config = {'num_tasks': 5, 'per_task_rotation': 22.5, 'trial': TRIAL_ID,\
           'memory_size': 200, 'num_lmc_samples': 10, 'lcm_init': 0.5,
-          'lr_inter': 0.01, 'epochs_inter': 20, 'bs_inter': 64, 
-          'lr_intra': 0.01, 'epochs_intra': 20,  'bs_intra': 64,
-          'lr_mtl':0.01, 'epochs_mtl': 10, 'exp_dir': EXP_DIR,
+          'lr_inter': 0.01, 'epochs_inter': 5, 'bs_inter': 64, 
+          'lr_intra': 0.01, 'epochs_intra': 5,  'bs_intra': 64,
+          'lr_mtl':0.01, 'epochs_mtl': 5, 'exp_dir': EXP_DIR,
           'mtl_start_from_other_init': True,
           'dataset': DATASET, 'mlp_hiddens': HIDDENS, 'device': DEVICE,
          }
