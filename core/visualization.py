@@ -179,12 +179,13 @@ def plot_contour(grid, values, coords, vmax=None, log_alpha=-5, N=7, path='defau
     #norm = LogNormalize(clipped.min() - 1e-8, clipped.max() + 1e-8, log_alpha=log_alpha)
     #levels = [35, 40, 50, 60, 70, 80, 90]
     # levels = [0.04, 0.05, 0.06, 0.07, 0.08, 1.0]
+    levels = [1.0, 1.2, 1.4, 1.6, 1.8, 2.0, 10e10]
     contour = plt.contour(grid[:, :, 0], grid[:, :, 1], values, cmap=cmap,# norm=norm,
                           linewidths=2.5,
                           zorder=1,
-                          levels=7)
+                          levels=levels)
     contourf = plt.contourf(grid[:, :, 0], grid[:, :, 1], values, cmap=cmap,# norm=norm,
-                            levels=7,
+                            levels=levels,
                             zorder=0,
                             alpha=0.5)
     colorbar = plt.colorbar(format='%.2g')
