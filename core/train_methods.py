@@ -57,8 +57,9 @@ def train_task_sequentially(task, train_loader, config):
 def train_task_MTL(task, train_loader, config, val_loader):
     assert task >= 2
     EXP_DIR = config['exp_dir']
-    if task == 2 and config['mtl_start_from_init'] == True:
-        model = load_model('{}/init.pth'.format(EXP_DIR)).to(DEVICE)
+    if task == 2 and config['mtl_start_from_other_init'] == True:
+        model = load_model('{}/init_2.pth'.format(EXP_DIR)).to(DEVICE)
+        print("WARNING >> MTL is loading not a shared init checkpoint!")
     else:
         model = load_model('{}/t_{}_mtl.pth'.format(EXP_DIR, task-1)).to(DEVICE)
     optimizer = torch.optim.SGD(model.parameters(), lr=config['lr_mtl'], momentum=0.8)
