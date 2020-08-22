@@ -192,7 +192,7 @@ def plot_graphs(config):
     acc_fig_path = "{}/accs".format(config['exp_dir'])
     plot_accs(config['num_tasks'], seq_meter.data, mtl_meter.data, acc_fig_path)
 
-    plot_cka_scores(config)
+    # plot_cka_scores(config)
 
     # --- task 1 ---
     plot_mode_connections_for_minima('seq', 1, config)
