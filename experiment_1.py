@@ -22,9 +22,9 @@ EXP_DIR = './checkpoints/{}'.format(TRIAL_ID)
 
 config = {'num_tasks': 5, 'per_task_rotation': 22.5, 'trial': TRIAL_ID,\
           'memory_size': 200, 'num_lmc_samples': 10, 'lcm_init': 0.5,
-          'lr_inter': 0.02, 'epochs_inter': 10, 'bs_inter': 64, 
-          'lr_intra': 0.02, 'epochs_intra': 20,  'bs_intra': 64,
-          'lr_mtl':0.01, 'epochs_mtl': 20, 'exp_dir': EXP_DIR,
+          'lr_inter': 0.01, 'epochs_inter': 10, 'bs_inter': 64, 
+          'lr_intra': 0.01, 'epochs_intra': 20,  'bs_intra': 64,
+          'lr_mtl':0.01, 'epochs_mtl': 15, 'exp_dir': EXP_DIR,
           'mtl_start_from_init': False,
           'dataset': DATASET, 'mlp_hiddens': HIDDENS, 'device': DEVICE,
          }
@@ -57,7 +57,7 @@ def plot_loss_plane(w, eval_loader, path, w_labels, config):
     coords = np.stack(get_xy(p, w[0], u, v) for p in w)
     # print("coords", coords)
 
-    G = 12
+    G = 15
     margin = 0.2
     alphas = np.linspace(0.0 - margin, 1.0 + margin, G)
     betas = np.linspace(0.0 - margin, 1.0 + margin, G)
