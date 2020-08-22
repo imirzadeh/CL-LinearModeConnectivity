@@ -151,7 +151,7 @@ def plot_l2_map(matrix, labels, path):
     ax.get_figure().savefig(path+'.pdf', dpi=200)
     plt.close()
 
-def plot_contour(grid, values, coords, vmax=None, log_alpha=-5, N=7, path='default.png', cmap='jet_r', w_labels=[]):
+def plot_contour(grid, values, coords, vmax=None, log_alpha=-5, N=7, path='default.png', cmap='jet_r', w_labels=[], dataset='cifar'):
     sns.set(style="ticks")
     sns.set_context("paper",rc={"lines.linewidth": 2.5,
                     'xtick.labelsize':24,
@@ -176,17 +176,24 @@ def plot_contour(grid, values, coords, vmax=None, log_alpha=-5, N=7, path='defau
     levels = np.sort(np.concatenate((levels, [10e10])))
 
     # print(levels)
-    norm = LogNormalize(clipped.min() - 1e-8, clipped.max() + 1e-8, log_alpha=log_alpha)
+    # norm = LogNormalize(clipped.min() - 1e-8, clipped.max() + 1e-8, log_alpha=log_alpha)
     #levels = [35, 40, 50, 60, 70, 80, 90]
     # levels = [0.04, 0.05, 0.06, 0.07, 0.08, 1.0]
     # levels = [0.0, 1.0, 1.2, 1.3, 1.4, 1.5, 1.6, 1.7, 1.8, 2.0, 2.5, 5.0]
     # levels = 10
 
-    levels = [0.2, 1.2, 1.3, 1.4, 1.5, 1.6, 1.7, 1.8, 1.9, 2.0, 2.25, 2.5, 3.0, 10e10]
-    clevels = [1.2, 1.3, 1.4, 1.5, 1.6, 1.7, 1.8, 1.9, 2.0, 2.25, 2.5, 3.0, 10e10]
-    norm = matplotlib.colors.Normalize(1.0, 2.2)
-    # levels = 40
-
+    if 'cifar' in dataset:
+        levels = [0.2, 1.2, 1.3, 1.4, 1.5, 1.6, 1.7, 1.8, 1.9, 2.0, 2.25, 2.5, 3.0, 10e10]
+        clevels = [1.2, 1.3, 1.4, 1.5, 1.6, 1.7, 1.8, 1.9, 2.0, 2.25, 2.5, 3.0, 10e10]
+        norm = matplotlib.colors.Normalize(1.0, 2.2)
+    elif 'mnist' in dataset:
+        levels = [0.0, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0, 1.2, 1.4, 1.6, 1.8, 2.0, 10e10]
+        clevels =  levels[1:]
+        norm = matplotlib.colors.Normalize(0.1, 1.5)
+    else:
+        levels = 10
+        clevels = 10
+        norm = matplotlib.colors.Normalize(min(values), max(values))
     contour = plt.contour(grid[:, :, 0], grid[:, :, 1], values, cmap=cmap, norm=norm,
                           linewidths=2.5,
                           zorder=1,
