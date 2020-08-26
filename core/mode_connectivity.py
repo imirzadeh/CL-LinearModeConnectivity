@@ -75,13 +75,3 @@ def get_clf_loss(net, loader):
     test_loss /= count
     return test_loss
 
-def calculate_mode_connectivity(w1, w2, eval_loader, config):
-    net = load_model('{}/{}.pth'.format(config['exp_dir'], 'init')).to(DEVICE)
-    loss_history, acc_history, ts = [], [], []
-    for t in np.arange(0.0, 1.01, 0.025):
-        ts.append(t)
-        net = assign_weights(net, w1 + t*(w2-w1)).to(DEVICE)
-        metrics = eval_single_epoch(net, eval_loader)
-        loss_history.append(metrics['loss'])
-        acc_history.append(metrics['accuracy'])
-    return loss_history, acc_history, ts

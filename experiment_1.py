@@ -9,7 +9,6 @@ from core.train_methods import train_task_sequentially, train_task_MTL, eval_sin
 from core.utils import save_np_arrays, setup_experiment, log_comet_metric, get_random_string
 from core.utils import save_task_model_by_policy, load_task_model_by_policy, flatten_params
 from core.utils import assign_weights, get_norm_distance, ContinualMeter
-from core.mode_connectivity import calculate_mode_connectivity
 from core.visualization import plot_contour, get_xy, plot_heat_map, plot_l2_map, plot_accs
 from core.visualization import plot_single_interpolation, plot_multi_interpolations
 
@@ -23,7 +22,7 @@ EXP_DIR = './checkpoints/{}'.format(TRIAL_ID)
 
 config = {
          # ---COMMON----
-         'num_tasks': 5, 'per_task_rotation': 9, 'trial': TRIAL_ID, 'exp_dir': EXP_DIR,\
+         'num_tasks': 20, 'per_task_rotation': 9, 'trial': TRIAL_ID, 'exp_dir': EXP_DIR,\
          'memory_size': 200, 'dataset': DATASET, 'device': DEVICE, 'momentum': 0.8,\
          'mlp_hiddens': HIDDENS, 'dropout': 0.1, 'lr_decay': 0.8, 'stable_sgd': False,\
 
@@ -133,6 +132,17 @@ def plot_cka_scores(config):
             else:
                 plot_cka(p1, tasks[t1], p2, tasks[t2],  eval_task=tasks[t1], config=config)
 
+
+def calculate_mode_connectivity(w1, w2, eval_loader, config):
+    net = load_model('{}/{}.pth'.format(config['exp_dir'], 'init')).to(DEVICE)
+    loss_history, acc_history, ts = [], [], []
+    for t in np.arange(0.0, 1.01, 0.025):
+        ts.append(t)
+        net = assign_weights(net, w1 + t*(w2-w1)).to(DEVICE)
+        metrics = eval_single_epoch(net, eval_loader)
+        loss_history.append(metrics['loss'])
+        acc_history.append(metrics['accuracy'])
+    return loss_history, acc_history, ts
 
 
 def calculate_l2_distance(p1, t1, p2, t2, config):
