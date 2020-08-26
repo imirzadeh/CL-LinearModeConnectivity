@@ -13,7 +13,7 @@ from core.visualization import plot_contour, get_xy, plot_heat_map, plot_l2_map,
 from core.visualization import plot_single_interpolation, plot_multi_interpolations
 
 DATASET = 'rot-mnist'
-HIDDENS = 200
+HIDDENS = 256
 DEVICE = 'cuda' if torch.cuda.is_available() else 'cpu'
 TRIAL_ID =  os.environ.get('NNI_TRIAL_JOB_ID', get_random_string(5))
 EXP_DIR = './checkpoints/{}'.format(TRIAL_ID)
