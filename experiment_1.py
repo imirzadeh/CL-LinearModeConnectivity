@@ -205,7 +205,7 @@ def get_custom_mode_connections_for_minima(p1, t1, config):
     for t2 in [5, 10, 15, 20]:
         # seq_con = get_mode_connections(p1, t1, 'seq', t2, t1, config)
         mtl_con = get_mode_connections(p1, t1, 'mtl', t2, t1, config)
-        segments = seq_con['ts']
+        segments = mtl_con['ts']
         # seq_labels.append(r"$\hat{{w}}_{} \rightarrow \hat{{w}}_{}$".format(t1, t2))
         mtl_labels.append(r"$\hat{{w}}_{} \rightarrow w^*_{}$".format(t1, t2))
         # seq_cons.append(seq_con['loss'])
