@@ -34,8 +34,7 @@ EXP_DIR = './checkpoints/{}'.format(TRIAL_ID)
 #           'lmc_line_samples': 5, 'lmc_epochs': 1,   
 #          }
 
-seq_meter = ContinualMeter('seq_accs', config['num_tasks'])
-lmc_meter = ContinualMeter('lmc_accs', config['num_tasks'])
+
 
 config = nni.get_next_parameter()
 config['per_task_rotation'] = 9
@@ -47,6 +46,8 @@ config['exp_dir'] = EXP_DIR
 config['lmc_policy'] = 'offline'
 config['lmc_interpolation'] =  linear
 
+seq_meter = ContinualMeter('seq_accs', config['num_tasks'])
+lmc_meter = ContinualMeter('lmc_accs', config['num_tasks'])
 
 experiment = Experiment(api_key="1UNrcJdirU9MEY0RC3UCU7eAg", \
                         project_name="lmc-offline-rot-20", \
