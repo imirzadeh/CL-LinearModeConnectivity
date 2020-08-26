@@ -45,7 +45,7 @@ def eval_single_epoch(net, loader):
 
 def train_task_sequentially(task, train_loader, config):
     EXP_DIR = config['exp_dir']
-    current_lr = config['seq_lr'] * (config['lr_decay'])**(task-1)
+    current_lr = max(0.001, config['seq_lr'] * (config['lr_decay'])**(task-1))
     prev_model_name = 'init' if task == 1 else 't_{}_seq'.format(str(task-1))
     prev_model_path = '{}/{}.pth'.format(EXP_DIR, prev_model_name)
     model = load_model(prev_model_path).to(DEVICE)
@@ -75,7 +75,7 @@ def train_task_LMC_offline(task, loaders, config):
     loader_curr = loaders['subset'][task]['train']
 
     optimizer = torch.optim.SGD(model_lmc.parameters(), lr=config['lmc_lr'], momentum=config['momentum'])
-    factor = 1 if task != config['num_tasks'] else 2
+    factor = 1 #if task != config['num_tasks'] else 2
     for epoch in range(factor*config['lmc_epochs']):
         model_lmc.train()
         optimizer.zero_grad()
