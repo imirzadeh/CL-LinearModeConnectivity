@@ -1,4 +1,5 @@
 from comet_ml import Experiment
+import nni
 import os
 import torch
 import numpy as np
