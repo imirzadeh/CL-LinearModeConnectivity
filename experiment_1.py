@@ -20,11 +20,11 @@ TRIAL_ID =  os.environ.get('NNI_TRIAL_JOB_ID', get_random_string(5))
 EXP_DIR = './checkpoints/{}'.format(TRIAL_ID)
 
 
-config = {'num_tasks': 5, 'per_task_rotation': 22.5, 'trial': TRIAL_ID,\
+config = {'num_tasks': 15, 'per_task_rotation': 22.5, 'trial': TRIAL_ID,\
           'memory_size': 200, 'num_lmc_samples': 10, 'lcm_init': 0.5,
-          'lr_inter': 0.01, 'epochs_inter': 5, 'bs_inter': 64,
-          'lr_intra': 0.01, 'epochs_intra': 5,  'bs_intra': 64,
-          'lr_mtl':0.005, 'epochs_mtl': 15, 'exp_dir': EXP_DIR,
+          'lr_inter': 0.01, 'epochs_inter': 1, 'bs_inter': 64,
+          'lr_intra': 0.01, 'epochs_intra': 1,  'bs_intra': 64,
+          'lr_mtl':0.01, 'epochs_mtl': 1, 'exp_dir': EXP_DIR,
           'mtl_start_from_other_init': True,
           'dataset': DATASET, 'mlp_hiddens': HIDDENS, 'device': DEVICE,
          }
@@ -179,6 +179,23 @@ def plot_mode_connections_for_minima(p1, t1, config, max_task=None):
     plot_multi_interpolations(x=segments, ys=seq_cons + mtl_cons ,y_labels=seq_labels+mtl_labels, path=save_path)
 
 
+def get_custom_mode_connections_for_minima(p1, t1, config):
+    seq_cons, mtl_cons = [], []
+    seq_labels, mtl_labels = [], []
+    segments = []
+
+    for t2 in [5, 10, 15]:
+        seq_con = get_mode_connections(p1, t1, 'seq', t2, t1, config)
+        mtl_con = get_mode_connections(p1, t1, 'mtl', t2, t1, config)
+        segments = seq_con['ts']
+        seq_labels.append(r"$\hat{{w}}_{} \rightarrow \hat{{w}}_{}$".format(t1, t2))
+        mtl_labels.append(r"$\hat{{w}}_{} \rightarrow w^*_{}$".format(t1, t2))
+        seq_cons.append(seq_con['loss'])
+        mtl_cons.append(mtl_con['loss'])
+    # print("DEBUG MC >> len(labels)=", len(seq_cons+mtl_cons))
+    save_path = path='{}/mc_on_{}_custom'.format(config['exp_dir'], t1)
+    plot_multi_interpolations(x=segments, ys=seq_cons + mtl_cons ,y_labels=seq_labels+mtl_labels, path=save_path)
+
 def plot_graphs(config):
     # load models
     models = {'seq': {}, 'mtl': {}}
@@ -187,39 +204,50 @@ def plot_graphs(config):
         if t >= 2:
             models['mtl'][t] = flatten_params(load_task_model_by_policy(t, 'mtl', config['exp_dir']))
 
-    plot_l2_distances(config)
+    # plot_l2_distances(config)
 
-    acc_fig_path = "{}/accs".format(config['exp_dir'])
-    plot_accs(config['num_tasks'], seq_meter.data, mtl_meter.data, acc_fig_path)
+    # acc_fig_path = "{}/accs".format(config['exp_dir'])
+    # plot_accs(config['num_tasks'], seq_meter.data, mtl_meter.data, acc_fig_path)
 
     # plot_cka_scores(config)
 
     # --- task 1 ---
-    plot_mode_connections_for_minima('seq', 1, config)
-    plot_mode_connections_for_minima('seq', 1, config, 2)
-    plot_mode_connections_for_minima('seq', 1, config, 3)
-    plot_mode_connections_for_minima('seq', 2, config)
-    plot_mode_connections_for_minima('seq', 2, config, 3)
+    # plot_mode_connections_for_minima('seq', 1, config)
+    # plot_mode_connections_for_minima('seq', 1, config, 2)
+    # plot_mode_connections_for_minima('seq', 1, config, 3)
+    # plot_mode_connections_for_minima('seq', 2, config)
+    # plot_mode_connections_for_minima('seq', 2, config, 3)
 
-    path = '{}/surface_{}_{}_{}_{}_{}_{}_on_{}'.format(config['exp_dir'], 'seq', 1, 'mtl', 2, 'seq', 2,  1)
+    get_custom_mode_connections_for_minima('seq', 1, config)
+    get_custom_mode_connections_for_minima('seq', 2, config)
+    path = '{}/surface_{}_{}_{}_{}_{}_{}_on_{}'.format(config['exp_dir'], 'seq', 1, 'mtl', 5, 'seq', 5,  1)
     labels = [r"$\hat{w}_1$", r"$w^*_{2}$", r"$\hat{w}_2$"]
-    plot_loss_plane([models['seq'][1], models['mtl'][2], models['seq'][2]], loaders['sequential'][1]['val'], path, labels, config)
+    plot_loss_plane([models['seq'][1], models['mtl'][5], models['seq'][5]], loaders['sequential'][1]['val'], path, labels, config)
 
-    path = '{}/surface_{}_{}_{}_{}_{}_{}_on_{}'.format(config['exp_dir'], 'seq', 1, 'mtl', 2, 'seq', 2,  2)
+    path = '{}/surface_{}_{}_{}_{}_{}_{}_on_{}'.format(config['exp_dir'], 'seq', 1, 'mtl', 10, 'seq', 10,  1)
     labels = [r"$\hat{w}_1$", r"$w^*_{2}$", r"$\hat{w}_2$"]
-    plot_loss_plane([models['seq'][1], models['mtl'][2], models['seq'][2]], loaders['sequential'][2]['val'], path, labels, config)
+    plot_loss_plane([models['seq'][1], models['mtl'][10], models['seq'][10]], loaders['sequential'][1]['val'], path, labels, config)
 
-    path = '{}/surface_{}_{}_{}_{}_{}_{}_on_{}'.format(config['exp_dir'], 'seq', 1, 'mtl', 3, 'seq', 3,  1)
-    labels = [r"$\hat{w}_1$", r"$w^*_{3}$", r"$\hat{w}_3$"]
-    plot_loss_plane([models['seq'][1], models['mtl'][3], models['seq'][3]], loaders['sequential'][1]['val'], path, labels, config)
+    path = '{}/surface_{}_{}_{}_{}_{}_{}_on_{}'.format(config['exp_dir'], 'seq', 1, 'mtl', 15, 'seq', 15,  1)
+    labels = [r"$\hat{w}_1$", r"$w^*_{2}$", r"$\hat{w}_2$"]
+    plot_loss_plane([models['seq'][1], models['mtl'][15], models['seq'][15]], loaders['sequential'][1]['val'], path, labels, config)
 
-    path = '{}/surface_{}_{}_{}_{}_{}_{}_on_{}'.format(config['exp_dir'], 'seq', 1, 'mtl', 3, 'seq', 3,  3)
-    labels = [r"$\hat{w}_1$", r"$w^*_{3}$", r"$\hat{w}_3$"]
-    plot_loss_plane([models['seq'][1], models['mtl'][3], models['seq'][3]], loaders['sequential'][3]['val'], path, labels, config)
 
-    path = '{}/surface_{}_{}_{}_{}_{}_{}_on_{}'.format(config['exp_dir'], 'seq', 2, 'mtl', 3, 'seq', 3,  2)
-    labels = [r"$\hat{w}_2$", r"$w^*_{3}$", r"$\hat{w}_3$"]
-    plot_loss_plane([models['seq'][2], models['mtl'][3], models['seq'][3]], loaders['sequential'][2]['val'], path, labels, config)
+    # path = '{}/surface_{}_{}_{}_{}_{}_{}_on_{}'.format(config['exp_dir'], 'seq', 1, 'mtl', 2, 'seq', 2,  2)
+    # labels = [r"$\hat{w}_1$", r"$w^*_{2}$", r"$\hat{w}_2$"]
+    # plot_loss_plane([models['seq'][1], models['mtl'][2], models['seq'][2]], loaders['sequential'][2]['val'], path, labels, config)
+
+    # path = '{}/surface_{}_{}_{}_{}_{}_{}_on_{}'.format(config['exp_dir'], 'seq', 1, 'mtl', 3, 'seq', 3,  1)
+    # labels = [r"$\hat{w}_1$", r"$w^*_{3}$", r"$\hat{w}_3$"]
+    # plot_loss_plane([models['seq'][1], models['mtl'][3], models['seq'][3]], loaders['sequential'][1]['val'], path, labels, config)
+
+    # path = '{}/surface_{}_{}_{}_{}_{}_{}_on_{}'.format(config['exp_dir'], 'seq', 1, 'mtl', 3, 'seq', 3,  3)
+    # labels = [r"$\hat{w}_1$", r"$w^*_{3}$", r"$\hat{w}_3$"]
+    # plot_loss_plane([models['seq'][1], models['mtl'][3], models['seq'][3]], loaders['sequential'][3]['val'], path, labels, config)
+
+    # path = '{}/surface_{}_{}_{}_{}_{}_{}_on_{}'.format(config['exp_dir'], 'seq', 2, 'mtl', 3, 'seq', 3,  2)
+    # labels = [r"$\hat{w}_2$", r"$w^*_{3}$", r"$\hat{w}_3$"]
+    # plot_loss_plane([models['seq'][2], models['mtl'][3], models['seq'][3]], loaders['sequential'][2]['val'], path, labels, config)
 
 def main():
     print('Started the trial >>', TRIAL_ID, 'for experiment 1')
