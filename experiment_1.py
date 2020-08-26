@@ -46,7 +46,7 @@ experiment = Experiment(api_key="1UNrcJdirU9MEY0RC3UCU7eAg", \
                         workspace="cl-modeconnectivity", disabled=False)
 
 loaders = get_all_loaders(config['dataset'], config['num_tasks'],\
-                         config['bs_inter'], config['bs_intra'],\
+                         config['seq_batch_size'], config['seq_batch_size'],\
                          config['memory_size'], config.get('per_task_rotation'))
 
 
