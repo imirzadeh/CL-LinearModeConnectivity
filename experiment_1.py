@@ -20,14 +20,21 @@ TRIAL_ID =  os.environ.get('NNI_TRIAL_JOB_ID', get_random_string(5))
 EXP_DIR = './checkpoints/{}'.format(TRIAL_ID)
 
 
-config = {'num_tasks': 15, 'per_task_rotation': 22.5, 'trial': TRIAL_ID,\
-          'dropout': 0.0, 'mlp_hiddens': 784,
-          'memory_size': 200, 'num_lmc_samples': 10, 'lcm_init': 0.5,
-          'lr_inter': 0.01, 'epochs_inter': 1, 'bs_inter': 64,
-          'lr_intra': 0.01, 'epochs_intra': 1,  'bs_intra': 64,
-          'lr_mtl':0.01, 'epochs_mtl': 1, 'exp_dir': EXP_DIR,
-          'mtl_start_from_other_init': True,
-          'dataset': DATASET, 'mlp_hiddens': HIDDENS, 'device': DEVICE,
+
+config = {
+         # ---COMMON----
+         'num_tasks': 5, 'per_task_rotation': 9, 'trial': TRIAL_ID, 'exp_dir': EXP_DIR,\
+         'memory_size': 200, 'dataset': DATASET, 'device': DEVICE, 'momentum': 0.8,\
+         'mlp_hiddens': HIDDENS, 'dropout': 0.1, 'lr_decay': 0.8, 'stable_sgd': False,\
+
+          # ----Seq Model-----
+          'seq_lr': 0.05, 'seq_batch_size': 64, 'seq_epochs': 1,\
+          'lr_mtl': 0.05, 'epochs_mtl': 1, 'mtl_start_from_other_init': False,\
+
+          # ------LMC models------
+          'lmc_policy': 'offline', 'lmc_interpolation': 'linear',\
+          'lmc_lr': 0.01, 'lmc_batch_size': 64, 'lcm_init_position': 0.1,\
+          'lmc_line_samples': 5, 'lmc_epochs': 1,   
          }
 
 seq_meter = ContinualMeter('seq_accs', config['num_tasks'])
