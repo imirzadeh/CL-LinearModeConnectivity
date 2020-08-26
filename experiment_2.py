@@ -21,8 +21,8 @@ EXP_DIR = './checkpoints/{}'.format(TRIAL_ID)
 
 config = {
          # ---COMMON----
-         'num_tasks': 10, 'per_task_rotation': 9, 'trial': TRIAL_ID, 'exp_dir': EXP_DIR,\
-         'memory_size': 100, 'dataset': DATASET, 'device': DEVICE, 'momentum': 0.8,\
+         'num_tasks': 20, 'per_task_rotation': 9, 'trial': TRIAL_ID, 'exp_dir': EXP_DIR,\
+         'memory_size': 200, 'dataset': DATASET, 'device': DEVICE, 'momentum': 0.8,\
          'mlp_hiddens': HIDDENS, 'dropout': 0.2, 'lr_decay': 0.8, 'stable_sgd': False,\
 
           # ----Seq Model-----
@@ -30,8 +30,8 @@ config = {
 
           # ------LMC models------
           'lmc_policy': 'offline', 'lmc_interpolation': 'linear',\
-          'lmc_lr': 0.1, 'lmc_batch_size': 64, 'lcm_init_position': 0.15,\
-          'lmc_line_samples': 5, 'lmc_epochs': 2,   
+          'lmc_lr': 0.01, 'lmc_batch_size': 64, 'lcm_init_position': 0.1,\
+          'lmc_line_samples': 5, 'lmc_epochs': 1,   
          }
 
 seq_meter = ContinualMeter('seq_accs', config['num_tasks'])
@@ -40,8 +40,8 @@ lmc_meter = ContinualMeter('lmc_accs', config['num_tasks'])
 #config = nni.get_next_parameter()
 config['trial'] = TRIAL_ID
 experiment = Experiment(api_key="1UNrcJdirU9MEY0RC3UCU7eAg", \
-                        project_name="explore-mode-wall", \
-                        workspace="lmc-offline-rot-20", disabled=False)
+                        project_name="lmc-offline-rot-20", \
+                        workspace="cl-modeconnectivity", disabled=False)
 
 loaders = get_all_loaders(config['dataset'], config['num_tasks'],\
                          config['lmc_batch_size'], config['seq_batch_size'],\
