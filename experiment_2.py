@@ -45,7 +45,7 @@ config['dataset'] = DATASET
 config['device'] = DEVICE
 config['exp_dir'] = EXP_DIR
 config['lmc_policy'] = 'offline'
-config['lmc_interpolation'] =  linear
+config['lmc_interpolation'] =  'linear'
 
 seq_meter = ContinualMeter('seq_accs', config['num_tasks'])
 lmc_meter = ContinualMeter('lmc_accs', config['num_tasks'])
