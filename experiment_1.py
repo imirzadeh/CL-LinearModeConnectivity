@@ -22,9 +22,9 @@ EXP_DIR = './checkpoints/{}'.format(TRIAL_ID)
 
 config = {'num_tasks': 5, 'per_task_rotation': 22.5, 'trial': TRIAL_ID,\
           'memory_size': 200, 'num_lmc_samples': 10, 'lcm_init': 0.5,
-          'lr_inter': 0.01, 'epochs_inter': 5, 'bs_inter': 64, 
+          'lr_inter': 0.01, 'epochs_inter': 5, 'bs_inter': 64,
           'lr_intra': 0.01, 'epochs_intra': 5,  'bs_intra': 64,
-          'lr_mtl':0.01, 'epochs_mtl': 5, 'exp_dir': EXP_DIR,
+          'lr_mtl':0.005, 'epochs_mtl': 15, 'exp_dir': EXP_DIR,
           'mtl_start_from_other_init': True,
           'dataset': DATASET, 'mlp_hiddens': HIDDENS, 'device': DEVICE,
          }
@@ -75,7 +75,7 @@ def plot_loss_plane(w, eval_loader, path, w_labels, config):
             tr_loss[i, j] = err
 
     contour = {'grid': grid, 'values': tr_loss, 'coords': coords}
-    save_np_arrays(contour, path=path) 
+    save_np_arrays(contour, path=path)
     plot_contour(grid, tr_loss, coords, log_alpha=-5.0, N=7, path=path, w_labels=w_labels, dataset='wall')#config['dataset'])
     return contour
 
@@ -92,7 +92,7 @@ def plot_cka(p1, t1, p2, t2, eval_task, config):
     m1 = load_task_model_by_policy(t1, p1, config['exp_dir'])
     m2 = load_task_model_by_policy(t2, p2, config['exp_dir'])
 
-    
+
     save_path = '{}/cka_on_{}_{}_vs_{}_{}'.format(config['exp_dir'], p1, t1, p2, t2)
     scores, keys = calculate_CKA(m1, m2, loaders['sequential'][eval_task]['val'], num_batches=50)
     res = {'scores': scores, 'keys': keys}
@@ -224,13 +224,13 @@ def plot_graphs(config):
 def main():
     print('Started the trial >>', TRIAL_ID, 'for experiment 1')
     # init and save
-    setup_experiment(experiment, config)  
+    setup_experiment(experiment, config)
 
     # convention:  init      =>  initialization
     # convention:  t_i_seq   =>  task i (sequential)
     # convention:  t_i_mtl   => task 1 ... i (multitask)
     # convention:  t_i_lcm   => task 1 ... i (Linear Mode Connectivity)
-    
+
 
     for task in range(1, config['num_tasks']+1):
         print('---- Task {} (seq) ----'.format(task))
@@ -248,18 +248,18 @@ def main():
 
         if task > 1:
             accs_mtl, losses_mtl = [], []
-            
+
             print('---- Task {} (mtl) ----'.format(task))
             mtl_model = train_task_MTL(task, loaders['full-multitask'][task]['train'], config, loaders['sequential'][1]['val'])
 
             save_task_model_by_policy(mtl_model, task, 'mtl', config['exp_dir'])
-            
+
             for prev_task in range(1, task+1):
                 metrics_mtl =  eval_single_epoch(mtl_model, loaders['sequential'][prev_task]['val'])
                 accs_mtl.append(metrics_mtl['accuracy'])
                 losses_mtl.append(metrics_mtl['loss'])
                 mtl_meter.update(task, prev_task, metrics['accuracy'])
-                
+
                 print('MTL >> ', prev_task, metrics_mtl)
                 log_comet_metric(experiment, 't_{}_mtl_acc'.format(prev_task), metrics_mtl['accuracy'], task)
                 log_comet_metric(experiment, 't_{}_mtl_loss'.format(prev_task), round(metrics_mtl['loss'], 5), task)

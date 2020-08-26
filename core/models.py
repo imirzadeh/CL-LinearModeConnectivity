@@ -15,27 +15,36 @@ class MLP(nn.Module):
     """
     Two layer MLP for MNIST benchmarks.
     """
-    def __init__(self, hiddens, output):
+    def __init__(self, config):
         super(MLP, self).__init__()
         self.save_acts = False
         self.acts = {}
-        self.W1 = nn.Linear(784, hiddens)    
+        self.config = config
+        self.W1 = nn.Linear(784, config['mlp_hiddens'])
+        self.dropout_1 =  nn.Dropout(p=config['dropout'])   
         self.relu = nn.ReLU(inplace=True)
-        self.W2 = nn.Linear(hiddens, hiddens)
-        self.W3 = nn.Linear(hiddens, 10)
+        self.W2 = nn.Linear(config['mlp_hiddens'], config['mlp_hiddens'])
+        self.dropout_2 =  nn.Dropout(p=config['dropout'])   
+
+        self.W3 = nn.Linear(config['mlp_hiddens'], 10)
         # self.dropout_p = config['dropout']
 
     def forward(self, x, task_id=None):
         # x = x.view(-1, 784 + self.num_condition_neurons)
         out = self.W1(x)
         out = self.relu(out)
+
         if self.save_acts:
             self.acts['layer 1'] = out.detach().clone()
-        # out = nn.functional.dropout(out, p=self.dropout_p)
+
+        if self.config['dropout'] > 0:
+            out = self.dropout_1(out)
         out = self.W2(out)
         out = self.relu(out)
         if self.save_acts:
             self.acts['layer 2'] = out.detach().clone()
+        if self.config['dropout'] > 0:
+            out = self.dropout_2(out)
         # out = nn.functional.dropout(out, p=self.dropout_p)
         out = self.W3(out)
         return out

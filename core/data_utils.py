@@ -203,11 +203,10 @@ def get_all_loaders(dataset, num_tasks, bs_inter, bs_intra, num_examples, per_ta
     print('loading multitask {}'.format(dataset))
     if 'cifar' in dataset:
         loaders['multitask'] = get_multitask_cifar100_loaders(num_tasks, bs_inter, num_examples)
-        loaders['full-multitask'] = get_multitask_cifar100_loaders(num_tasks, bs_inter, num_tasks*5*500)
+        #loaders['full-multitask'] = get_multitask_cifar100_loaders(num_tasks, bs_inter, num_tasks*5*500)
     elif 'rot' in dataset and 'mnist' in dataset:
         loaders['multitask'] = get_multitask_rotated_mnist(num_tasks, bs_inter, num_examples, per_task_rotation)
-        loaders['full-multitask'] = get_multitask_rotated_mnist(num_tasks, bs_inter, num_tasks*10*2000, per_task_rotation)
-
+        #loaders['full-multitask'] = get_multitask_rotated_mnist(num_tasks, bs_inter, num_tasks*10*2000, per_task_rotation)
     else:
         raise Exception("{} not implemented!".format(dataset))
 

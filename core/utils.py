@@ -101,10 +101,10 @@ def save_np_arrays(data, path):
 
 def setup_experiment(experiment, config):
     Path(config['exp_dir']).mkdir(parents=True, exist_ok=True)
-    init_model = ResNet18() if 'cifar' in config['dataset'] else MLP(config['mlp_hiddens'], 10)
+    init_model = ResNet18() if 'cifar' in config['dataset'] else MLP(config)
     save_model(init_model, '{}/init.pth'.format(config['exp_dir']))
 
-    init_model_2 = ResNet18() if 'cifar' in config['dataset'] else MLP(config['mlp_hiddens'], 10)
+    init_model_2 = ResNet18() if 'cifar' in config['dataset'] else MLP(config)
     save_model(init_model, '{}/init_2.pth'.format(config['exp_dir']))
     experiment.log_parameters(config)
 
