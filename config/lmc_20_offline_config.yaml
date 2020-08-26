@@ -6,7 +6,7 @@ maxTrialNum: 1500
 
 #choice: local, remote, pai
 trainingServicePlatform: local
-searchSpacePath: rot_5_search.json
+searchSpacePath: lcm_20_offline_space.json
 #choice: true, false
 useAnnotation: false
 tuner:
@@ -14,6 +14,6 @@ tuner:
   #SMAC (SMAC should be installed through nnictl)
   builtinTunerName: Random
 trial:
-  command: python train.py
+  command: python experiment_2.py
   codeDir: ..
   gpuNum: 1
