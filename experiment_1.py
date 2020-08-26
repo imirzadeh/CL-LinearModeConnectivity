@@ -13,7 +13,7 @@ from core.visualization import plot_contour, get_xy, plot_heat_map, plot_l2_map,
 from core.visualization import plot_single_interpolation, plot_multi_interpolations
 
 DATASET = 'rot-mnist'
-HIDDENS = 100
+HIDDENS = 200
 DEVICE = 'cuda' if torch.cuda.is_available() else 'cpu'
 TRIAL_ID =  os.environ.get('NNI_TRIAL_JOB_ID', get_random_string(5))
 EXP_DIR = './checkpoints/{}'.format(TRIAL_ID)
@@ -239,15 +239,15 @@ def plot_graphs(config):
     get_custom_mode_connections_for_minima('seq', 1, config)
     get_custom_mode_connections_for_minima('seq', 2, config)
     path = '{}/surface_{}_{}_{}_{}_{}_{}_on_{}'.format(config['exp_dir'], 'seq', 1, 'mtl', 5, 'seq', 5,  1)
-    labels = [r"$\hat{w}_1$", r"$w^*_{2}$", r"$\hat{w}_2$"]
+    labels = [r"$\hat{w}_1$", r"$w^*_{5}$", r"$\hat{w}_2$"]
     plot_loss_plane([models['seq'][1], models['mtl'][5], models['seq'][5]], loaders['sequential'][1]['val'], path, labels, config)
 
     path = '{}/surface_{}_{}_{}_{}_{}_{}_on_{}'.format(config['exp_dir'], 'seq', 1, 'mtl', 10, 'seq', 10,  1)
-    labels = [r"$\hat{w}_1$", r"$w^*_{2}$", r"$\hat{w}_2$"]
+    labels = [r"$\hat{w}_1$", r"$w^*_{10}$", r"$\hat{w}_2$"]
     plot_loss_plane([models['seq'][1], models['mtl'][10], models['seq'][10]], loaders['sequential'][1]['val'], path, labels, config)
 
     path = '{}/surface_{}_{}_{}_{}_{}_{}_on_{}'.format(config['exp_dir'], 'seq', 1, 'mtl', 15, 'seq', 15,  1)
-    labels = [r"$\hat{w}_1$", r"$w^*_{2}$", r"$\hat{w}_2$"]
+    labels = [r"$\hat{w}_1$", r"$w^*_{15}$", r"$\hat{w}_2$"]
     plot_loss_plane([models['seq'][1], models['mtl'][15], models['seq'][15]], loaders['sequential'][1]['val'], path, labels, config)
 
 
