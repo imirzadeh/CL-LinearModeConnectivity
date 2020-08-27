@@ -22,7 +22,7 @@ EXP_DIR = './checkpoints/{}'.format(TRIAL_ID)
 
 config = {
          # ---COMMON----
-         'num_tasks': 20, 'per_task_rotation': 9, 'trial': TRIAL_ID, 'exp_dir': EXP_DIR,\
+         'num_tasks': 10, 'per_task_rotation': 9, 'trial': TRIAL_ID, 'exp_dir': EXP_DIR,\
          'memory_size': 200, 'dataset': DATASET, 'device': DEVICE, 'momentum': 0.8,\
          'mlp_hiddens': HIDDENS, 'dropout': 0.1, 'lr_decay': 0.8, 'stable_sgd': False,\
 
@@ -32,7 +32,7 @@ config = {
 
           # ------LMC models------
           'lmc_policy': 'offline', 'lmc_interpolation': 'linear',\
-          'lmc_lr': 0.01, 'lmc_batch_size': 64, 'lcm_init_position': 0.1,\
+          'lmc_lr': 0.01, 'lmc_batch_size': 64, 'lcm_init_position': 0.5,\
           'lmc_line_samples': 5, 'lmc_epochs': 1,   
          }
 
