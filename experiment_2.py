@@ -20,24 +20,23 @@ TRIAL_ID =  os.environ.get('NNI_TRIAL_JOB_ID', get_random_string(5))
 EXP_DIR = './checkpoints/{}'.format(TRIAL_ID)
 
 
-# config = {
-#          # ---COMMON----
-#          'num_tasks': 20, 'per_task_rotation': 9, 'trial': TRIAL_ID, 'exp_dir': EXP_DIR,\
-#          'memory_size': 200, 'dataset': DATASET, 'device': DEVICE, 'momentum': 0.8,\
-#          'mlp_hiddens': HIDDENS, 'dropout': 0.0, 'lr_decay': 0.8, 'stable_sgd': False,\
+config = {
+         # ---COMMON----
+         'num_tasks': 5, 'per_task_rotation': 9, 'trial': TRIAL_ID, 'exp_dir': EXP_DIR,\
+         'memory_size': 1000, 'dataset': DATASET, 'device': DEVICE, 'momentum': 0.8,\
+         'mlp_hiddens': HIDDENS, 'dropout': 0.25, 'lr_decay': 0.9, 'stable_sgd': False,\
 
-#           # ----Seq Model-----
-#           'seq_lr': 0.05, 'seq_batch_size': 16, 'seq_epochs': 1,\
+          # ----Seq Model-----
+          'seq_lr': 0.05, 'seq_batch_size': 32, 'seq_epochs': 1,\
 
-#           # ------LMC models------
-#           'lmc_policy': 'offline', 'lmc_interpolation': 'linear',\
-#           'lmc_lr': 0.15, 'lmc_batch_size': 16, 'lcm_init_position': 0.05,\
-#           'lmc_line_samples': 5, 'lmc_epochs': 1,   
-#          }
+          # ------LMC models------
+          'lmc_policy': 'offline', 'lmc_interpolation': 'linear',\
+          'lmc_lr': 0.001, 'lmc_batch_size': 32, 'lcm_init_position': 0.1,\
+          'lmc_line_samples': 5, 'lmc_epochs': 3,
+         }
 
 
-
-config = nni.get_next_parameter()
+# config = nni.get_next_parameter()
 
 config['per_task_rotation'] = 9
 config['mlp_hiddens'] = HIDDENS
@@ -52,7 +51,7 @@ seq_meter = ContinualMeter('seq_accs', config['num_tasks'])
 lmc_meter = ContinualMeter('lmc_accs', config['num_tasks'])
 
 experiment = Experiment(api_key="1UNrcJdirU9MEY0RC3UCU7eAg", \
-                        project_name="explore-memory-size-mnist", \
+                        project_name="explore-advanced-paths", \
                         workspace="cl-modeconnectivity", disabled=False)
 
 loaders = get_all_loaders(config['dataset'], config['num_tasks'],\

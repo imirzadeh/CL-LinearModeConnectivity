@@ -4,7 +4,9 @@ import numpy as np
 import torch.nn as nn
 from .utils import DEVICE, save_model,load_model
 from .utils import flatten_params, assign_weights, assign_grads
-from .mode_connectivity import get_line_loss
+from .mode_connectivity import get_line_loss, bezier_path_opt
+# from core.mode_connectivity import 
+
 
 def train_single_epoch(net, optimizer, loader):
     net = net.to(DEVICE)
@@ -58,6 +60,7 @@ def train_task_sequentially(task, train_loader, config):
         model = train_single_epoch(model, optimizer, train_loader)
     return model
 
+
 def train_task_LMC_offline(task, loaders, config):
     assert task >= 2
     EXP_DIR = config['exp_dir']
@@ -79,8 +82,9 @@ def train_task_LMC_offline(task, loaders, config):
     for epoch in range(factor*config['lmc_epochs']):
         model_lmc.train()
         optimizer.zero_grad()
-        grads = get_line_loss(w_prev, flatten_params(model_lmc), loader_prev, config) \
-              + get_line_loss(w_curr, flatten_params(model_lmc), loader_curr, config)
+        # grads = get_line_loss(w_prev, flatten_params(model_lmc), loader_prev, config) \
+        #       + get_line_loss(w_curr, flatten_params(model_lmc), loader_curr, config)
+        grads = bezier_path_opt(w_prev, w_curr, flatten_params(model_lmc), loader_prev + loader_curr, config)
         model_lmc = assign_grads(model_lmc, grads).to(DEVICE) # NOTE: it has loss.backward() within of itself
         optimizer.step()
         for prev_task in range(1, task+1):

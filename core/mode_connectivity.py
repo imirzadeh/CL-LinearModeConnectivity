@@ -75,3 +75,22 @@ def get_clf_loss(net, loader):
     test_loss /= count
     return test_loss
 
+def bezier_path_opt(w_1, w_2, theta, config):
+    accum_grad = None
+    for t in np.arange(0.0, 1.01, 1.0/float(config['lmc_line_samples'])):
+            grads = []
+            # cur_weight = start_w + (w - start_w) * t
+            cur_weight = ((1-t)**2)*w_1 + 2*t*(1-t)*theta + (t**2)*w_2
+            m = assign_weights(m, cur_weight).to(DEVICE)
+            current_loss = get_clf_loss(m, loader)
+            current_loss.backward()
+
+            for name, param in m.named_parameters():
+                grads.append(param.grad.view(-1))
+            grads = torch.cat(grads)
+            if accum_grad is None:
+                accum_grad = grads
+            else:
+                accum_grad += grads
+    return accum_grad
+
