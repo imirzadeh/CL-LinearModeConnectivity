@@ -77,6 +77,7 @@ def get_clf_loss(net, loader):
 
 def bezier_path_opt(w_1, w_2, theta, loader, config):
     accum_grad = None
+    m = load_model('{}/{}.pth'.format(config['exp_dir'], 'init')).to(DEVICE)
     for t in np.arange(0.0, 1.01, 1.0/float(config['lmc_line_samples'])):
             grads = []
             # cur_weight = start_w + (w - start_w) * t
