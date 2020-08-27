@@ -12,7 +12,7 @@ from core.utils import assign_weights, get_norm_distance, ContinualMeter, load_m
 from core.visualization import plot_contour, get_xy, plot_heat_map, plot_l2_map, plot_accs
 from core.visualization import plot_single_interpolation, plot_multi_interpolations
 
-DATASET = 'rot-mnist'
+DATASET = 'cifar'
 HIDDENS = 256
 DEVICE = 'cuda' if torch.cuda.is_available() else 'cpu'
 TRIAL_ID =  os.environ.get('NNI_TRIAL_JOB_ID', get_random_string(5))
@@ -27,8 +27,8 @@ config = {
          'mlp_hiddens': HIDDENS, 'dropout': 0.1, 'lr_decay': 0.8, 'stable_sgd': False,\
 
           # ----Seq Model-----
-          'seq_lr': 0.05, 'seq_batch_size': 64, 'seq_epochs': 1,\
-          'lr_mtl': 0.05, 'epochs_mtl': 1, 'mtl_start_from_other_init': False,\
+          'seq_lr': 0.01, 'seq_batch_size': 64, 'seq_epochs': 1,\
+          'lr_mtl': 0.01, 'epochs_mtl': 1, 'mtl_start_from_other_init': False,\
 
           # ------LMC models------
           'lmc_policy': 'offline', 'lmc_interpolation': 'linear',\
@@ -243,7 +243,9 @@ def plot_graphs(config):
 
     get_custom_mode_connections_for_minima('seq', 1, config)
     get_custom_mode_connections_for_minima('seq', 2, config)
+    get_custom_mode_connections_for_minima('seq', 5, config)
     get_custom_mode_connections_for_minima('seq', 10, config)
+    get_custom_mode_connections_for_minima('seq', 15, config)
 
     path = '{}/surface_{}_{}_{}_{}_{}_{}_on_{}'.format(config['exp_dir'], 'seq', 1, 'mtl', 5, 'seq', 5,  1)
     labels = [r"$\hat{w}_1$", r"$w^*_{5}$", r"$\hat{w}_{5}$"]
