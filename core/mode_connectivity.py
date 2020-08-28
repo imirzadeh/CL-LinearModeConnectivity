@@ -18,7 +18,7 @@ def get_line_loss(start_w, w, loader, config):
     accum_grad = None
     criterion = nn.CrossEntropyLoss().to(DEVICE)
 
-    print("DEBUG >> LMC interpolation is >> {}".format(interpolation))
+    #print("DEBUG >> LMC interpolation is >> {}".format(interpolation))
     if interpolation == 'linear':
         for t in np.arange(0.0, 1.01, 1.0/float(config['lmc_line_samples'])):
             grads = []

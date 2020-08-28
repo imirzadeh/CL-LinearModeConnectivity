@@ -27,11 +27,11 @@ config = {
          'mlp_hiddens': HIDDENS, 'dropout': 0.25, 'lr_decay': 0.7, 'stable_sgd': False,\
 
           # ----Seq Model-----
-          'seq_lr': 0.05, 'seq_batch_size': 32, 'seq_epochs': 1,\
+          'seq_lr': 0.15, 'seq_batch_size': 32, 'seq_epochs': 1,\
 
           # ------LMC models------
           'lmc_policy': 'offline', 'lmc_interpolation': 'linear',\
-          'lmc_lr': 0.001, 'lmc_batch_size': 32, 'lcm_init_position': 0.5,\
+          'lmc_lr': 0.005, 'lmc_batch_size': 32, 'lcm_init_position': 0.5,\
           'lmc_line_samples': 10, 'lmc_epochs': 1,
          }
 
