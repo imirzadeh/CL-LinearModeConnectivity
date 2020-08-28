@@ -54,7 +54,7 @@ def get_permuted_mnist(task_id, batch_size):
                 torchvision.transforms.Lambda(lambda x: x.view(-1)[idx_permute] ),
                 ])
     mnist_train = torchvision.datasets.MNIST('./data/', train=True, download=True, transform=transforms)
-    train_loader = torch.utils.data.DataLoader(mnist_train, batch_size=batch_size, num_workers=4, pin_memory=True, shuffle=True)
+    train_loader = torch.utils.data.DataLoader(mnist_train, batch_size=batch_size, num_workers=8, pin_memory=True, shuffle=True)
     test_loader = torch.utils.data.DataLoader(torchvision.datasets.MNIST('./data/', train=False, download=True, transform=transforms),  batch_size=256, shuffle=False, num_workers=4, pin_memory=True)
 
     return train_loader, test_loader
@@ -80,7 +80,7 @@ def get_subset_permuted_mnist(task_id, batch_size, num_examples):
     # num_examples = num_examples_per_task * num_tasks
     sampler = torch.utils.data.RandomSampler(train_datasets, replacement=True, num_samples=num_examples)
 
-    train_loader = torch.utils.data.DataLoader(train_datasets,  batch_size=batch_size, sampler=sampler, shuffle=False, num_workers=4, pin_memory=True)
+    train_loader = torch.utils.data.DataLoader(train_datasets,  batch_size=batch_size, sampler=sampler, shuffle=False, num_workers=8, pin_memory=True)
     test_loader = torch.utils.data.DataLoader(test_datasets,  batch_size=256, shuffle=True, num_workers=4, pin_memory=True)
 
     return train_loader, test_loader
@@ -277,7 +277,7 @@ def get_all_loaders(dataset, num_tasks, bs_inter, bs_intra, num_examples, per_ta
             sub_loader_train , _ = fast_mnist_loader(get_subset_rotated_mnist(task, bs_inter, 2*num_examples, per_task_rotation),'cpu')
         elif 'perm' in dataset and 'mnist' in dataset:
             seq_loader_train , seq_loader_val = fast_mnist_loader(get_permuted_mnist(task, bs_intra), 'cpu')
-            sub_loader_train , _ = fast_mnist_loader(get_subset_permuted_mnist(task, bs_inter, 5*num_examples),'cpu')
+            sub_loader_train , _ = fast_mnist_loader(get_subset_permuted_mnist(task, bs_inter, 10*num_examples),'cpu')
         elif 'cifar' in dataset:
             seq_loader_train , seq_loader_val = fast_cifar_loader(get_split_cifar100(task, bs_intra, cifar_train, cifar_test), task, 'cpu')
             sub_loader_train , _ = fast_cifar_loader(get_subset_split_cifar100(task, bs_inter, cifar_train, 5*num_examples), task, 'cpu')
