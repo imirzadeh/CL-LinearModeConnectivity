@@ -31,7 +31,7 @@ config = {
 
           # ------LMC models------
           'lmc_policy': 'offline', 'lmc_interpolation': 'linear',\
-          'lmc_lr': 0.1, 'lmc_batch_size': 32, 'lcm_init_position': 0.5,\
+          'lmc_lr': 0.001, 'lmc_batch_size': 32, 'lcm_init_position': 0.5,\
           'lmc_line_samples': 10, 'lmc_epochs': 1,
          }
 

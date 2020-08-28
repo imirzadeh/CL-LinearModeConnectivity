@@ -79,14 +79,49 @@ def train_task_LMC_offline(task, loaders, config):
 
     optimizer = torch.optim.SGD(model_lmc.parameters(), lr=config['lmc_lr'], momentum=config['momentum'])
     factor = 1 #if task != config['num_tasks'] else 2
+
     for epoch in range(factor*config['lmc_epochs']):
-        model_lmc.train()
-        optimizer.zero_grad()
-        grads = get_line_loss(w_prev, flatten_params(model_lmc), loader_prev, config) \
-              + get_line_loss(w_curr, flatten_params(model_lmc), loader_curr, config)
+
+        num_prev = len(loader_prev)
+        num_curr = len(loader_curr)
+        print("len(prev) = {} and len(curr)  = {}".format(num_prev, num_curr))
+        for i in range(max(num_curr, num_prev)):
+            model_lmc.train()
+            optimizer.zero_grad()
+            if i < num_prev:
+                data, target, task_id = loader_prev[i]
+                grads = get_line_loss(w_prev, flatten_params(model_lmc), [[data, target, task_id]], config)
+                data, target, task_id = loader_curr[i]
+                grads += get_line_loss(w_curr, flatten_params(model_lmc), [[data, target, task_id]], config)
+                model_lmc = assign_grads(model_lmc, grads).to(DEVICE)
+                optimizer.step()
+            else:
+                model_lmc.train()
+                optimizer.zero_grad()
+                data, target, task_id = loader_curr[i]
+                grads = get_line_loss(w_curr, flatten_params(model_lmc), [[data, target, task_id]], config)
+                model_lmc = assign_grads(model_lmc, grads).to(DEVICE)
+                optimizer.step()
+
+        # for data, target, task_id in loader_prev:
+        #     model_lmc.train()
+        #     optimizer.zero_grad()
+        #     grads = get_line_loss(w_prev, flatten_params(model_lmc), [[data, target, task_id]], config)
+        #     model_lmc = assign_grads(model_lmc, grads).to(DEVICE)
+        #     optimizer.step()
+
+        # for data, target, task_id in loader_curr:
+        #     model_lmc.train()
+        #     optimizer.zero_grad()
+        #     grads = get_line_loss(w_curr, flatten_params(model_lmc), [[data, target, task_id]], config)
+        #     model_lmc = assign_grads(model_lmc, grads).to(DEVICE)
+        #     optimizer.step()
+
+        # grads = get_line_loss(w_prev, flatten_params(model_lmc), loader_prev, config) \
+        #       + get_line_loss(w_curr, flatten_params(model_lmc), loader_curr, config)
         # grads = bezier_path_opt(w_prev, w_curr, flatten_params(model_lmc), loader_prev + loader_curr, config)
-        model_lmc = assign_grads(model_lmc, grads).to(DEVICE) # NOTE: it has loss.backward() within of itself
-        optimizer.step()
+        # model_lmc = assign_grads(model_lmc, grads).to(DEVICE) # NOTE: it has loss.backward() within of itself
+        # optimizer.step()
         for prev_task in range(1, task+1):
             print("LMC Debug >> epoch {} >> metric {} >> {}".format(epoch+1, prev_task, eval_single_epoch(model_lmc, loaders['sequential'][prev_task]['val'])))
         print()

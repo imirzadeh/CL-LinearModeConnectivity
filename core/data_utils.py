@@ -274,10 +274,10 @@ def get_all_loaders(dataset, num_tasks, bs_inter, bs_intra, num_examples, per_ta
         print("loading {} for task {}".format(dataset, task))
         if 'rot' in dataset and 'mnist' in dataset:
             seq_loader_train , seq_loader_val = fast_mnist_loader(get_rotated_mnist(task, bs_intra, per_task_rotation), 'cpu')
-            sub_loader_train , _ = fast_mnist_loader(get_subset_rotated_mnist(task, bs_inter, num_examples, per_task_rotation),'cpu')
+            sub_loader_train , _ = fast_mnist_loader(get_subset_rotated_mnist(task, bs_inter, 2*num_examples, per_task_rotation),'cpu')
         elif 'perm' in dataset and 'mnist' in dataset:
             seq_loader_train , seq_loader_val = fast_mnist_loader(get_permuted_mnist(task, bs_intra), 'cpu')
-            sub_loader_train , _ = fast_mnist_loader(get_subset_permuted_mnist(task, bs_inter, num_examples),'cpu')
+            sub_loader_train , _ = fast_mnist_loader(get_subset_permuted_mnist(task, bs_inter, 5*num_examples),'cpu')
         elif 'cifar' in dataset:
             seq_loader_train , seq_loader_val = fast_cifar_loader(get_split_cifar100(task, bs_intra, cifar_train, cifar_test), task, 'cpu')
             sub_loader_train , _ = fast_cifar_loader(get_subset_split_cifar100(task, bs_inter, cifar_train, 5*num_examples), task, 'cpu')
