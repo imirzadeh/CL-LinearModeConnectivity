@@ -82,9 +82,9 @@ def train_task_LMC_offline(task, loaders, config):
     for epoch in range(factor*config['lmc_epochs']):
         model_lmc.train()
         optimizer.zero_grad()
-        # grads = get_line_loss(w_prev, flatten_params(model_lmc), loader_prev, config) \
-        #       + get_line_loss(w_curr, flatten_params(model_lmc), loader_curr, config)
-        grads = bezier_path_opt(w_prev, w_curr, flatten_params(model_lmc), loader_prev + loader_curr, config)
+        grads = get_line_loss(w_prev, flatten_params(model_lmc), loader_prev, config) \
+              + get_line_loss(w_curr, flatten_params(model_lmc), loader_curr, config)
+        # grads = bezier_path_opt(w_prev, w_curr, flatten_params(model_lmc), loader_prev + loader_curr, config)
         model_lmc = assign_grads(model_lmc, grads).to(DEVICE) # NOTE: it has loss.backward() within of itself
         optimizer.step()
         for prev_task in range(1, task+1):
