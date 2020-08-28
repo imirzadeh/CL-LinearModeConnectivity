@@ -184,7 +184,7 @@ def main():
     # convention:  t_i_mtl   => task 1 ... i (multitask)
     # convention:  t_i_lmc   => task 1 ... i (Linear Mode Connectivity)
 
-
+    nni_metric = 0
     for task in range(1, config['num_tasks']+1):
         print('---- Task {} (seq) ----'.format(task))
         seq_model = train_task_sequentially(task, loaders['sequential'][task]['train'], config)
@@ -216,6 +216,7 @@ def main():
                 print('LMC >> ', prev_task, metrics_lmc)
                 log_comet_metric(experiment, 't_{}_lmc_acc'.format(prev_task), metrics_lmc['accuracy'], task)
                 log_comet_metric(experiment, 't_{}_lmc_loss'.format(prev_task), round(metrics_lmc['loss'], 5), task)
+            nni_metric = np.mean(accs_lmc)
             log_comet_metric(experiment, 'avg_acc_lmc', np.mean(accs_lmc),task)
             log_comet_metric(experiment, 'avg_loss_lmc', np.mean(losses_lmc),task)
         print()
@@ -227,6 +228,8 @@ def main():
 
     experiment.log_asset_folder(config['exp_dir'])
     experiment.end()
+    nni.report_final_result(nni_metric)
+
 
 if __name__ == "__main__":
     main()
