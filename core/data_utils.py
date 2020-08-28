@@ -13,6 +13,10 @@ matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 # PER_TASK_ROATATION = 9
 
+# global permutation map for this run
+permute_map = {k:np.random.RandomState().permutation(784) for k in range(2, 51)}
+permute_map[1] = np.array(range(784))
+
 def fast_mnist_loader(loaders, device='cpu'):
     train_loader, eval_loader = loaders
     trains, evals = [], []
@@ -44,6 +48,60 @@ def fast_cifar_loader(loaders, task_id, device='cpu'):
 
     return trains, evals
 
+def get_permuted_mnist(task_id, batch_size):
+    idx_permute = permute_map[task_id]
+    transforms = torchvision.transforms.Compose([torchvision.transforms.ToTensor(),
+                torchvision.transforms.Lambda(lambda x: x.view(-1)[idx_permute] ),
+                ])
+    mnist_train = torchvision.datasets.MNIST('./data/', train=True, download=True, transform=transforms)
+    train_loader = torch.utils.data.DataLoader(mnist_train, batch_size=batch_size, num_workers=4, pin_memory=True, shuffle=True)
+    test_loader = torch.utils.data.DataLoader(torchvision.datasets.MNIST('./data/', train=False, download=True, transform=transforms),  batch_size=256, shuffle=False, num_workers=4, pin_memory=True)
+
+    return train_loader, test_loader
+
+def get_subset_permuted_mnist(task_id, batch_size, num_examples):
+    trains = []
+    tests = []
+    for i in [task_id]:
+        idx_permute = permute_map[task_id]
+        transforms = torchvision.transforms.Compose([torchvision.transforms.ToTensor(),
+                torchvision.transforms.Lambda(lambda x: x.view(-1)[idx_permute] ),
+                ])
+
+        train = MNIST('./data/', train=True, download=True, transform=transforms)
+        test = MNIST('./data/', train=False, download=True, transform=transforms)
+
+        trains.append(train)
+        tests.append(test)
+
+    train_datasets = ConcatDataset(trains)
+    test_datasets = ConcatDataset(tests)
+
+    # num_examples = num_examples_per_task * num_tasks
+    sampler = torch.utils.data.RandomSampler(train_datasets, replacement=True, num_samples=num_examples)
+
+    train_loader = torch.utils.data.DataLoader(train_datasets,  batch_size=batch_size, sampler=sampler, shuffle=False, num_workers=4, pin_memory=True)
+    test_loader = torch.utils.data.DataLoader(test_datasets,  batch_size=256, shuffle=True, num_workers=4, pin_memory=True)
+
+    return train_loader, test_loader
+
+def get_multitask_permuted_mnist(num_tasks, batch_size, num_examples):
+    num_examples_per_task = num_examples//num_tasks
+
+    trains = []
+    tests = []
+    all_mtl_data = {}
+
+    for task in range(1, num_tasks+1):
+        all_mtl_data[task] = {}
+        train_loader, test_loader = fast_mnist_loader(get_subset_permuted_mnist(task, batch_size, num_examples_per_task))
+        trains += train_loader
+        tests += test_loader
+        all_mtl_data[task]['train'] = random.sample(trains[:], len(trains))
+        all_mtl_data[task]['val'] = tests[:]
+    return all_mtl_data
+
+
 class RotationTransform:
     """
     Rotation transforms for the images in `Rotation MNIST` dataset.
@@ -56,13 +114,6 @@ class RotationTransform:
 
 
 def get_rotated_mnist(task_id, batch_size, per_task_rotation):
-    """
-    Returns the dataset for a single task of Rotation MNIST dataset
-    :param task_id:
-    :param batch_size:
-    :return:
-    """
-    # per_task_rotation = PER_TASK_ROATATION
     rotation_degree = (task_id - 1)*per_task_rotation
 
     transforms = torchvision.transforms.Compose([
@@ -77,8 +128,6 @@ def get_rotated_mnist(task_id, batch_size, per_task_rotation):
 
 
 def get_subset_rotated_mnist(task_id, batch_size, num_examples, per_task_rotation):
-    # per_task_rotation = PER_TASK_ROATATION
-
     trains = []
     tests = []
     for i in [task_id]:
@@ -207,6 +256,9 @@ def get_all_loaders(dataset, num_tasks, bs_inter, bs_intra, num_examples, per_ta
     elif 'rot' in dataset and 'mnist' in dataset:
         loaders['multitask'] = get_multitask_rotated_mnist(num_tasks, bs_inter, num_examples, per_task_rotation)
         loaders['full-multitask'] = get_multitask_rotated_mnist(num_tasks, bs_inter, num_tasks*10*2000, per_task_rotation)
+    elif 'perm' in dataset and 'mnist' in dataset:
+        loaders['multitask'] = get_multitask_permuted_mnist(num_tasks, bs_inter, num_examples)
+        loaders['full-multitask'] = get_multitask_permuted_mnist(num_tasks, bs_inter, num_tasks*10*2000)
     else:
         raise Exception("{} not implemented!".format(dataset))
 
@@ -223,7 +275,9 @@ def get_all_loaders(dataset, num_tasks, bs_inter, bs_intra, num_examples, per_ta
         if 'rot' in dataset and 'mnist' in dataset:
             seq_loader_train , seq_loader_val = fast_mnist_loader(get_rotated_mnist(task, bs_intra, per_task_rotation), 'cpu')
             sub_loader_train , _ = fast_mnist_loader(get_subset_rotated_mnist(task, bs_inter, num_examples, per_task_rotation),'cpu')
-
+        elif 'perm' in dataset and 'mnist' in dataset:
+            seq_loader_train , seq_loader_val = fast_mnist_loader(get_permuted_mnist(task, bs_intra), 'cpu')
+            sub_loader_train , _ = fast_mnist_loader(get_subset_permuted_mnist(task, bs_inter, num_examples),'cpu')
         elif 'cifar' in dataset:
             seq_loader_train , seq_loader_val = fast_cifar_loader(get_split_cifar100(task, bs_intra, cifar_train, cifar_test), task, 'cpu')
             sub_loader_train , _ = fast_cifar_loader(get_subset_split_cifar100(task, bs_inter, cifar_train, 5*num_examples), task, 'cpu')
