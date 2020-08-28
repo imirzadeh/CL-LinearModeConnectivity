@@ -47,7 +47,7 @@ def eval_single_epoch(net, loader):
 
 def train_task_sequentially(task, train_loader, config):
     EXP_DIR = config['exp_dir']
-    current_lr = max(0.001, config['seq_lr'] * (config['lr_decay'])**(task-1))
+    current_lr = max(0.0005, config['seq_lr'] * (config['lr_decay'])**(task-1))
     prev_model_name = 'init' if task == 1 else 't_{}_seq'.format(str(task-1))
     prev_model_path = '{}/{}.pth'.format(EXP_DIR, prev_model_name)
     model = load_model(prev_model_path).to(DEVICE)
