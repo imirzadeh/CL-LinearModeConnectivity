@@ -14,7 +14,7 @@ from core.visualization import plot_contour, get_xy, plot_heat_map, plot_l2_map,
 from core.visualization import plot_single_interpolation, plot_multi_interpolations
 
 DATASET = 'perm-mnist'
-HIDDENS = 256
+HIDDENS = 512
 DEVICE = 'cuda' if torch.cuda.is_available() else 'cpu'
 TRIAL_ID =  os.environ.get('NNI_TRIAL_JOB_ID', get_random_string(5))
 EXP_DIR = './checkpoints/{}'.format(TRIAL_ID)
@@ -22,16 +22,16 @@ EXP_DIR = './checkpoints/{}'.format(TRIAL_ID)
 
 config = {
          # ---COMMON----
-         'num_tasks': 20, 'per_task_rotation': 9, 'trial': TRIAL_ID, 'exp_dir': EXP_DIR,\
-         'memory_size': 200, 'dataset': DATASET, 'device': DEVICE, 'momentum': 0.8,\
-         'mlp_hiddens': HIDDENS, 'dropout': 0.25, 'lr_decay': 0.7, 'stable_sgd': False,\
+         'num_tasks': 50, 'per_task_rotation': 9, 'trial': TRIAL_ID, 'exp_dir': EXP_DIR,\
+         'memory_size': 500, 'dataset': DATASET, 'device': DEVICE, 'momentum': 0.8,\
+         'mlp_hiddens': HIDDENS, 'dropout': 0.2, 'lr_decay': 0.7, 'stable_sgd': False,\
 
           # ----Seq Model-----
-          'seq_lr': 0.01, 'seq_batch_size': 16, 'seq_epochs': 1,\
+          'seq_lr': 0.01, 'seq_batch_size': 64, 'seq_epochs': 1,\
 
           # ------LMC models------
           'lmc_policy': 'offline', 'lmc_interpolation': 'linear',\
-          'lmc_lr': 0.0006, 'lmc_batch_size': 16, 'lcm_init_position': 0.25,\
+          'lmc_lr': 0.0005, 'lmc_batch_size': 64, 'lcm_init_position': 0.25,\
           'lmc_line_samples': 5, 'lmc_epochs': 1,
          }
 
@@ -51,7 +51,7 @@ seq_meter = ContinualMeter('seq_accs', config['num_tasks'])
 lmc_meter = ContinualMeter('lmc_accs', config['num_tasks'])
 
 experiment = Experiment(api_key="1UNrcJdirU9MEY0RC3UCU7eAg", \
-                        project_name="explore-perm-mnist", \
+                        project_name="explore-perm-mnist-50", \
                         workspace="cl-modeconnectivity", disabled=False)
 
 loaders = get_all_loaders(config['dataset'], config['num_tasks'],\
