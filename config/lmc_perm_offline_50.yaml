@@ -1,0 +1,21 @@
+authorName: Iman Mirzadeh
+experimentName: LMC_Perm-50
+trialConcurrency: 1
+maxExecDuration: 24h
+maxTrialNum: 1500
+
+#choice: local, remote, pai
+trainingServicePlatform: local
+searchSpacePath: lmc_perm_offline_50_space.json
+#choice: true, false
+useAnnotation: false
+tuner:
+  #choice: TPE, Random, Anneal, Evolution, BatchTuner
+  #SMAC (SMAC should be installed through nnictl)
+  builtinTunerName: TPE
+  classArgs:
+    optimize_mode: maximize
+trial:
+  command: python experiment_2.py
+  codeDir: ..
+  gpuNum: 1

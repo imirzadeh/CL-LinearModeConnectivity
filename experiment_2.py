@@ -20,23 +20,23 @@ TRIAL_ID =  os.environ.get('NNI_TRIAL_JOB_ID', get_random_string(5))
 EXP_DIR = './checkpoints/{}'.format(TRIAL_ID)
 
 
-config = {
-         # ---COMMON----
-         'num_tasks': 50, 'per_task_rotation': 9, 'trial': TRIAL_ID, 'exp_dir': EXP_DIR,\
-         'memory_size': 500, 'dataset': DATASET, 'device': DEVICE, 'momentum': 0.8,\
-         'mlp_hiddens': HIDDENS, 'dropout': 0.2, 'lr_decay': 0.7, 'stable_sgd': False,\
+# config = {
+#          # ---COMMON----
+#          'num_tasks': 50, 'per_task_rotation': 9, 'trial': TRIAL_ID, 'exp_dir': EXP_DIR,\
+#          'memory_size': 500, 'dataset': DATASET, 'device': DEVICE, 'momentum': 0.8,\
+#          'mlp_hiddens': HIDDENS, 'dropout': 0.2, 'lr_decay': 0.7, 'stable_sgd': False,\
 
-          # ----Seq Model-----
-          'seq_lr': 0.01, 'seq_batch_size': 64, 'seq_epochs': 1,\
+#           # ----Seq Model-----
+#           'seq_lr': 0.01, 'seq_batch_size': 64, 'seq_epochs': 1,\
 
-          # ------LMC models------
-          'lmc_policy': 'offline', 'lmc_interpolation': 'linear',\
-          'lmc_lr': 0.0005, 'lmc_batch_size': 64, 'lcm_init_position': 0.25,\
-          'lmc_line_samples': 5, 'lmc_epochs': 1,
-         }
+#           # ------LMC models------
+#           'lmc_policy': 'offline', 'lmc_interpolation': 'linear',\
+#           'lmc_lr': 0.0005, 'lmc_batch_size': 64, 'lcm_init_position': 0.25,\
+#           'lmc_line_samples': 5, 'lmc_epochs': 1,
+#          }
 
 
-# config = nni.get_next_parameter()
+config = nni.get_next_parameter()
 
 config['per_task_rotation'] = 9
 config['mlp_hiddens'] = HIDDENS
