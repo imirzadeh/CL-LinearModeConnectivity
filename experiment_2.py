@@ -211,7 +211,7 @@ def main():
                 metrics_lmc =  eval_single_epoch(lmc_model, loaders['sequential'][prev_task]['val'])
                 accs_lmc.append(metrics_lmc['accuracy'])
                 losses_lmc.append(metrics_lmc['loss'])
-                lmc_meter.update(task, prev_task, metrics['accuracy'])
+                lmc_meter.update(task, prev_task, metrics_lmc['accuracy'])
 
                 print('LMC >> ', prev_task, metrics_lmc)
                 log_comet_metric(experiment, 't_{}_lmc_acc'.format(prev_task), metrics_lmc['accuracy'], task)
