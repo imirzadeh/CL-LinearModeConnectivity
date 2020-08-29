@@ -51,7 +51,7 @@ seq_meter = ContinualMeter('seq_accs', config['num_tasks'])
 lmc_meter = ContinualMeter('lmc_accs', config['num_tasks'])
 
 experiment = Experiment(api_key="1UNrcJdirU9MEY0RC3UCU7eAg", \
-                        project_name="explore-perm-mnist-50", \
+                        project_name="iclr-cifar-20", \
                         workspace="cl-modeconnectivity", disabled=False)
 
 loaders = get_all_loaders(config['dataset'], config['num_tasks'],\

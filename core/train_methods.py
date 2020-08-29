@@ -85,23 +85,28 @@ def train_task_LMC_offline(task, loaders, config):
         num_prev = len(loader_prev)
         num_curr = len(loader_curr)
         print("len(prev) = {} and len(curr)  = {}".format(num_prev, num_curr))
+
         for i in range(max(num_curr, num_prev)):
             model_lmc.train()
             optimizer.zero_grad()
-            if i < num_prev:
+            if i < min(num_curr, num_prev):
                 data, target, task_id = loader_prev[i]
                 grads = get_line_loss(w_prev, flatten_params(model_lmc), [[data, target, task_id]], config)
                 data, target, task_id = loader_curr[i]
                 grads += get_line_loss(w_curr, flatten_params(model_lmc), [[data, target, task_id]], config)
                 model_lmc = assign_grads(model_lmc, grads).to(DEVICE)
-                optimizer.step()
             else:
-                model_lmc.train()
-                optimizer.zero_grad()
-                data, target, task_id = loader_curr[i]
-                grads = get_line_loss(w_curr, flatten_params(model_lmc), [[data, target, task_id]], config)
-                model_lmc = assign_grads(model_lmc, grads).to(DEVICE)
-                optimizer.step()
+                if num_curr < i < num_prev:
+                    data, target, task_id = loader_prev[i]
+                    grads = get_line_loss(w_prev, flatten_params(model_lmc), [[data, target, task_id]], config)
+                    model_lmc = assign_grads(model_lmc, grads).to(DEVICE)
+                else:
+                    data, target, task_id = loader_curr[i]
+                    grads = get_line_loss(w_curr, flatten_params(model_lmc), [[data, target, task_id]], config)
+                    model_lmc = assign_grads(model_lmc, grads).to(DEVICE)
+            optimizer.step()
+
+                 
 
         # for data, target, task_id in loader_prev:
         #     model_lmc.train()
