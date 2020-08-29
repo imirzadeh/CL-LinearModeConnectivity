@@ -87,6 +87,7 @@ def train_task_LMC_offline(task, loaders, config):
         print("len(prev) = {} and len(curr)  = {}".format(num_prev, num_curr))
 
         for i in range(max(num_curr, num_prev)):
+            print("DEBUG >> LMC batch {}".format(i))
             model_lmc.train()
             optimizer.zero_grad()
             if i < min(num_curr, num_prev):
@@ -94,16 +95,14 @@ def train_task_LMC_offline(task, loaders, config):
                 grads = get_line_loss(w_prev, flatten_params(model_lmc), [[data, target, task_id]], config)
                 data, target, task_id = loader_curr[i]
                 grads += get_line_loss(w_curr, flatten_params(model_lmc), [[data, target, task_id]], config)
-                model_lmc = assign_grads(model_lmc, grads).to(DEVICE)
             else:
                 if num_curr < i < num_prev:
                     data, target, task_id = loader_prev[i]
                     grads = get_line_loss(w_prev, flatten_params(model_lmc), [[data, target, task_id]], config)
-                    model_lmc = assign_grads(model_lmc, grads).to(DEVICE)
                 else:
                     data, target, task_id = loader_curr[i]
                     grads = get_line_loss(w_curr, flatten_params(model_lmc), [[data, target, task_id]], config)
-                    model_lmc = assign_grads(model_lmc, grads).to(DEVICE)
+            model_lmc = assign_grads(model_lmc, grads).to(DEVICE)
             optimizer.step()
 
                  
