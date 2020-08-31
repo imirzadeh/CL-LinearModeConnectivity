@@ -9,7 +9,7 @@ from core.cka_utils import calculate_CKA
 from core.train_methods import train_task_sequentially, train_task_LMC_offline, eval_single_epoch
 from core.utils import save_np_arrays, setup_experiment, log_comet_metric, get_random_string
 from core.utils import save_task_model_by_policy, load_task_model_by_policy, flatten_params
-from core.utils import assign_weights, get_norm_distance, ContinualMeter
+from core.utils import assign_weights, get_norm_distance, ContinualMeter, load_model
 from core.visualization import plot_contour, get_xy, plot_heat_map, plot_l2_map, plot_accs
 from core.visualization import plot_single_interpolation, plot_multi_interpolations
 
@@ -27,11 +27,11 @@ config = {
          'mlp_hiddens': HIDDENS, 'dropout': 0.2, 'lr_decay': 1.0, 'stable_sgd': False,\
 
           # ----Seq Model-----
-          'seq_lr': 0.01, 'seq_batch_size': 32, 'seq_epochs': 1,\
+          'seq_lr': 0.1, 'seq_batch_size': 64, 'seq_epochs': 1,\
 
           # ------LMC models------
           'lmc_policy': 'offline', 'lmc_interpolation': 'linear',\
-          'lmc_lr': 0.001, 'lmc_batch_size': 16, 'lcm_init_position': 0.1,\
+          'lmc_lr': 0.005, 'lmc_batch_size': 64, 'lcm_init_position': 0.01,\
           'lmc_line_samples': 5, 'lmc_epochs': 1,
          }
 
