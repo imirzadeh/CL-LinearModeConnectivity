@@ -245,6 +245,34 @@ def get_multitask_cifar100_loaders(num_tasks, batch_size, num_examples):
     return all_mtl_data
 
 
+def get_val_loaders_mnist(num_tasks):
+    loaders = {}
+    for task in range(1, num_tasks+1):
+        rotation_degree = (task - 1)*9.0
+
+        transforms = torchvision.transforms.Compose([ RotationTransform(rotation_degree), torchvision.transforms.ToTensor(),])
+        test_dataset = MNIST('./data/', train=False, download=True, transform=transforms)
+        test_loader = torch.utils.data.DataLoader(test_dataset,  batch_size=256, shuffle=True, num_workers=4)
+        loaders[task], _ = fast_mnist_loader([test_loader, []])
+    return loaders
+
+def get_val_loaders_cifar(num_tasks):
+    loaders = {}
+    cifar_transforms = torchvision.transforms.Compose([torchvision.transforms.ToTensor(),])
+    cifar_test = torchvision.datasets.CIFAR100('./data/', train=False, download=True, transform=cifar_transforms)
+    
+    for task_id in range(1, num_tasks+1):
+        start_class = (task_id-1)*5
+        end_class = task_id * 5
+        
+        targets_test = torch.tensor(cifar_test.targets)
+        target_test_idx = ((targets_test >= start_class) & (targets_test < end_class))
+
+        test_loader = torch.utils.data.DataLoader(torch.utils.data.dataset.Subset(cifar_test, np.where(target_test_idx==1)[0]), batch_size=128, shuffle=True)
+        loaders[task_id], _ = fast_cifar_loader([test_loader, []], task_id)
+    return loaders
+
+
 def get_all_loaders(dataset, num_tasks, bs_inter, bs_intra, num_examples, per_task_rotation=9):
     dataset = dataset.lower()
     loaders = {'sequential': {},  'multitask':  {}, 'subset': {}, 'full-multitask': {}}
@@ -285,7 +313,12 @@ def get_all_loaders(dataset, num_tasks, bs_inter, bs_intra, num_examples, per_ta
         loaders['subset'][task]['train'] = sub_loader_train
     return loaders
 
+
+
 # if __name__ == "__main__":
+#     loaders = get_val_loaders_mnist(5)
+#     print(loaders.keys())
+#     print(len(loaders[1]))
 #     loaders = get_all_loaders('cifar', 5, 16, 16, 25, 10)
 #     print(loaders['sequential'].keys(), loaders['subset'].keys(), loaders['multitask'].keys())
 #     for task in range(1, 6):
