@@ -122,6 +122,22 @@ class ContinualMeter:
         np.savetxt(path, self.data, delimiter=",")
 
 
+def get_latex_str_for_minima(policy, task):
+    if policy == 'seq':
+        return r"$\hat{{w}}_{{{}}}".format(task)
+    elif policy == 'lmc':
+        return r"$\bar{{w}}_{{{}}}".format(task)
+    elif policy == 'mtl':
+        return r"$w^*_{{{}}}".format(task)
+    else:
+        raise Exception("unknown policy")
+
+def get_latex_str_for_path(p1, t1, p2, t2):
+    start = get_latex_str_for_minima(p1, t1)
+    end = get_latex_str_for_minima(p2, t2)
+    return start + r" \rightarrow " + end
+
+
 # if __name__ == "__main__":
 #     m = MLP(10, 10)#ResNet18() #MLP(10, 10)
 
