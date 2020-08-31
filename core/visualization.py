@@ -45,8 +45,12 @@ def plot_multi_interpolations(x, ys, y_labels, path):
                     'axes.labelsize': 23,
                     'legend.handlelength': 1,
                     'legend.handleheight':1,})
+    rc('text', usetex=True)
+    matplotlib.rcParams['text.latex.preamble'] = r'\usepackage{amsmath}'
+    # colors = ['blue', 'orange', 'green', 'red', 'purple', 'gold', 'darkcyan', 'crimson']
+    n = len(y_labels)
+    colors = plt.cm.jet(list(reversed((np.linspace(0.1,0.7,n//2)))) + list(np.linspace(0.85,1.0,n//2+1)))
 
-    colors = ['blue', 'orange', 'green', 'red', 'purple', 'gold', 'darkcyan', 'crimson']
     suffix = 'Acc' if 'acc' in path else 'Loss'
     for i, y in enumerate(ys):
         plt.plot(x, ys[i], color=colors[i], label=y_labels[i])
