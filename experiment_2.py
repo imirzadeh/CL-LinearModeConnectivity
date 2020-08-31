@@ -24,14 +24,14 @@ config = {
          # ---COMMON----
          'num_tasks': 20, 'per_task_rotation': 9, 'trial': TRIAL_ID, 'exp_dir': EXP_DIR,\
          'memory_size': 100, 'dataset': DATASET, 'device': DEVICE, 'momentum': 0.8,\
-         'mlp_hiddens': HIDDENS, 'dropout': 0.2, 'lr_decay': 0.7, 'stable_sgd': False,\
+         'mlp_hiddens': HIDDENS, 'dropout': 0.2, 'lr_decay': 1.0, 'stable_sgd': False,\
 
           # ----Seq Model-----
           'seq_lr': 0.01, 'seq_batch_size': 32, 'seq_epochs': 1,\
 
           # ------LMC models------
           'lmc_policy': 'offline', 'lmc_interpolation': 'linear',\
-          'lmc_lr': 0.001, 'lmc_batch_size': 32, 'lcm_init_position': 0.25,\
+          'lmc_lr': 0.001, 'lmc_batch_size': 16, 'lcm_init_position': 0.1,\
           'lmc_line_samples': 5, 'lmc_epochs': 1,
          }
 
@@ -113,10 +113,10 @@ def plot_mode_connections_for_minima(p1, t1, config, max_task=None):
         max_task = config['num_tasks']
     for t2 in range(t1+1, max_task+1):
         seq_con = get_mode_connections(p1, t1, 'seq', t2, t1, config)
-        mtl_con = get_mode_connections(p1, t1, 'mtl', t2, t1, config)
+        mtl_con = get_mode_connections(p1, t1, 'lmc', t2, t1, config)
         segments = seq_con['ts']
-        seq_labels.append(r"$\hat{{w}}_{} \rightarrow \hat{{w}}_{}$".format(t1, t2))
-        mtl_labels.append(r"$\hat{{w}}_{} \rightarrow w^*_{}$".format(t1, t2))
+        seq_labels.append(r"$\hat{{w}}_{} \rightarrow \hat{{w}}_{{{}}}$".format(t1, t2))
+        mtl_labels.append(r"$\hat{{w}}_{} \rightarrow \bar{{w}}_{{{}}}$".format(t1, t2))
         seq_cons.append(seq_con['loss'])
         mtl_cons.append(mtl_con['loss'])
     # print("DEBUG MC >> len(labels)=", len(seq_cons+mtl_cons))
@@ -126,20 +126,22 @@ def plot_mode_connections_for_minima(p1, t1, config, max_task=None):
 
 def plot_graphs(config):
     # load models
-    models = {'seq': {}, 'mtl': {}, 'lmc': {}}
-    for t in range(1, config['num_tasks']+1):
-        models['seq'][t] = flatten_params(load_task_model_by_policy(t, 'seq', config['exp_dir']))
-        if t >= 2:
+    # models = {'seq': {}, 'mtl': {}, 'lmc': {}}
+    # for t in range(1, config['num_tasks']+1):
+        # models['seq'][t] = flatten_params(load_task_model_by_policy(t, 'seq', config['exp_dir']))
+        # if t >= 2:
             # models['mtl'][t] = flatten_params(load_task_model_by_policy(t, 'mtl', config['exp_dir']))
-            models['lmc'][t] = flatten_params(load_task_model_by_policy(t, 'lmc', config['exp_dir']))
-    acc_fig_path = "{}/accs".format(config['exp_dir'])
-    plot_accs(config['num_tasks'], seq_meter.data, lmc_meter.data, acc_fig_path)
+            # models['lmc'][t] = flatten_params(load_task_model_by_policy(t, 'lmc', config['exp_dir']))
+    # acc_fig_path = "{}/accs".format(config['exp_dir'])
+    # plot_accs(config['num_tasks'], seq_meter.data, lmc_meter.data, acc_fig_path)
 
     # --- task 1 ---
-    # plot_mode_connections_for_minima('seq', 1, config)
+    plot_mode_connections_for_minima('seq', 1, config)
     # plot_mode_connections_for_minima('seq', 1, config, 2)
     # plot_mode_connections_for_minima('seq', 1, config, 3)
     # plot_mode_connections_for_minima('seq', 2, config)
+    plot_mode_connections_for_minima('seq', 5, config)
+    plot_mode_connections_for_minima('seq', 10, config)
     # plot_mode_connections_for_minima('seq', 2, config, 3)
 
     # path = '{}/surface_{}_{}_{}_{}_{}_{}_on_{}'.format(config['exp_dir'], 'seq', 1, 'lmc', 2, 'seq', 2,  1)
@@ -224,7 +226,7 @@ def main():
     seq_meter.save(config)
     lmc_meter.save(config)
 
-    # plot_graphs(config)
+    plot_graphs(config)
 
     experiment.log_asset_folder(config['exp_dir'])
     experiment.end()
