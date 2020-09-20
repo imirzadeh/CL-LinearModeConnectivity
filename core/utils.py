@@ -158,6 +158,7 @@ def get_model_grads(model, loader):
     return grads
 
 def get_model_eigenspectrum(model, loader):
+    model.eval()
     criterion = torch.nn.CrossEntropyLoss().to(DEVICE)
     use_gpu = True if DEVICE != 'cpu' else False
 
