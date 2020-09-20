@@ -36,6 +36,12 @@ def plot_single_interpolation(x, y, path):
     plt.close()
 
 def plot_multi_interpolations(x, ys, y_labels, path):
+    if "_on_1" in path:
+        task = 1
+    elif "_on_5" in path:
+        task = 5
+    else:
+        task = None
     sns.set(style="whitegrid")
     sns.set_context("paper",rc={"lines.linewidth": 3.5,
                     'xtick.labelsize':23,
@@ -49,16 +55,17 @@ def plot_multi_interpolations(x, ys, y_labels, path):
     matplotlib.rcParams['text.latex.preamble'] = r'\usepackage{amsmath}'
     # colors = ['blue', 'orange', 'green', 'red', 'purple', 'gold', 'darkcyan', 'crimson']
     n = len(y_labels)
-    colors = plt.cm.jet(list(reversed((np.linspace(0.1,0.7,n//2)))) + list(np.linspace(0.85,1.0,n//2+1)))
+    colors = plt.cm.jet(list(reversed((np.linspace(0.1,0.7,n//2)))) + list(np.linspace(0.8,1.0,n//2+1)))
 
     suffix = 'Acc' if 'acc' in path else 'Loss'
     for i, y in enumerate(ys):
         plt.plot(x, ys[i], color=colors[i], label=y_labels[i])
     plt.xlabel('Interpolation')
-    plt.ylabel('Validation {}'.format(suffix))
+    plt.ylabel('Task {} - Loss'.format(task))
     # plt.title(title)
-    plt.legend(title='Paths', title_fontsize=19, ncol=2)
+    plt.legend(title='Paths', title_fontsize=19, ncol=2, loc='upper left', handletextpad=0.5, handlelength=1.0, columnspacing=1.0)
     # plt.ylim((0.0, 0.005))
+    plt.yticks([0, 1, 2, 3, 4, 5])
     plt.tight_layout()
     plt.savefig(path+".png", dpi=200)
     plt.savefig(path+".pdf", dpi=200)
