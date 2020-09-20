@@ -94,7 +94,7 @@ def main():
             mtl_model = train_task_MTL(task, loaders['full-multitask'][task]['train'], config, loaders['sequential'][1]['val'])
             grads_t1 = get_model_grads(mtl_model, loaders['sequential'][1]['val'])
             # grads_t2 = get_model_grads(mtl_model, loaders['sequential'][2]['val'])
-            grads_t3 = get_model_grads(load_task_model_by_policy(1, 'seq', config['exp_dir'], False).to(DEVICE), loaders['sequential'][2]['val'])
+            grads_t3 = get_model_grads(load_task_model_by_policy(1, 'seq', config['exp_dir']).to(DEVICE), loaders['sequential'][2]['val'])
 
             seq_1 = flatten_params(load_task_model_by_policy(1, 'seq', config['exp_dir']), False).cpu()
             seq_2 = flatten_params(load_task_model_by_policy(2, 'seq', config['exp_dir']), False).cpu()
