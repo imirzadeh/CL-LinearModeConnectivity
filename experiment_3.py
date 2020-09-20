@@ -95,12 +95,23 @@ def main():
             grads_t1 = get_model_grads(mtl_model, loaders['sequential'][1]['val'])
             grads_t2 = get_model_grads(mtl_model, loaders['sequential'][2]['val'])
             grads_t3 = get_model_grads(seq_model, loaders['sequential'][2]['val'])
+
+            seq_1 = flatten_params(load_task_model_by_policy(1, 'seq', config['EXP_DIR']))
+            seq_2 = flatten_params(load_task_model_by_policy(2, 'seq', config['EXP_DIR']))
+
             cosines_t1 = compute_direction_cosines(grads_t1, eigen_spectrum[1]['eigenvecs'])
             cosines_t2 = compute_direction_cosines(grads_t2, eigen_spectrum[2]['eigenvecs'])
             cosines_t3 = compute_direction_cosines(grads_t3, eigen_spectrum[1]['eigenvecs'])
+
+            cosine_d1 = compute_direction_cosines(flatten_params(mtl)-seq_1, eigen_spectrum[1]['eigenvecs'])
+            cosine_d2 = compute_direction_cosines(seq_2-seq_1, eigen_spectrum[1]['eigenvecs'])
             print("cos 1 >> ", cosines_t1)
             print("cos 2 >> ", cosines_t2)
             print("cos 3 >> ", cosines_t3)
+
+            print("dir 1 >>", cosine_d1)
+            print("dir 2 >>", cosine_d2)
+            
             save_task_model_by_policy(mtl_model, task, 'mtl', config['exp_dir'])
 
             for prev_task in range(1, task+1):
