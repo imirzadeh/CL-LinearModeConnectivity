@@ -6,6 +6,7 @@ import random
 import string
 from pathlib import Path
 from core.models import MLP, ResNet18
+from core.hessian_eigenthings import compute_hessian_eigenthings
 
 DEVICE = 'cuda' if torch.cuda.is_available() else 'cpu'
 
@@ -136,6 +137,51 @@ def get_latex_str_for_path(p1, t1, p2, t2):
     start = get_latex_str_for_minima(p1, t1)
     end = get_latex_str_for_minima(p2, t2)
     return start + r" \rightarrow " + end
+
+
+def get_model_grads(model, loader):
+    grads = []
+    criterion = nn.CrossEntropyLoss().to(DEVICE)
+    count = 0
+    test_loss = 0
+    for data, target, task_id in loader:
+            data = data.to(DEVICE)
+            target = target.to(DEVICE)
+            count += len(target)
+            output = model(data, task_id)
+            curr_loss = criterion(output, target)
+            curr_loss.backward()
+    for param in model.parameters():
+            grads.append(param.grad.view(-1))
+    grads = torch.cat(grads)
+    # print("Norm grad >> ", torch.norm(grads))
+    return grads
+
+def get_model_eigenspectrum(model, loader):
+    criterion = torch.nn.CrossEntropyLoss().to(DEVICE)
+    use_gpu = True if DEVICE != 'cpu' else False
+
+    new_loader = []
+    for i in range(35):
+        new_loader.append([loader[i][0], loader[i][1]])
+
+    est_eigenvals, est_eigenvecs = compute_hessian_eigenthings(
+        model,
+        new_loader,
+        criterion,
+        num_eigenthings=30,
+        power_iter_steps=100,
+        power_iter_err_threshold=1e-4,
+        momentum=0,
+        use_gpu=use_gpu,
+    )
+    #key = 'task-{}-epoch-{}'.format(task_id, time-1)
+    #hessian_eig_db[key] = est_eigenvals
+    #EXPERIMENT_DIRECTORY+"/{}-vec.npy".format(key)
+    #np.save(eig_vec_dir, est_eigenvecs)
+    #return hessian_eig_db
+    # print(" [[[[ Eigenvec shape] ]]]  >>> ".format(est_eigenvecs[0].shape))
+    return est_eigenvals, est_eigenvecs
 
 
 # if __name__ == "__main__":
