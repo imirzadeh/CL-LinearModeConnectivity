@@ -44,7 +44,7 @@ config['trial'] = TRIAL_ID
 experiment = Experiment(api_key="1UNrcJdirU9MEY0RC3UCU7eAg", \
                         project_name="explore-eigens", \
                         workspace="cl-modeconnectivity", disabled=True)
-
+    
 loaders = get_all_loaders(config['dataset'], config['num_tasks'],\
                          config['seq_batch_size'], config['seq_batch_size'],\
                          config['memory_size'], config.get('per_task_rotation'))
@@ -94,10 +94,13 @@ def main():
             mtl_model = train_task_MTL(task, loaders['full-multitask'][task]['train'], config, loaders['sequential'][1]['val'])
             grads_t1 = get_model_grads(mtl_model, loaders['sequential'][1]['val'])
             grads_t2 = get_model_grads(mtl_model, loaders['sequential'][2]['val'])
+            grads_t3 = get_model_grads(seq_model, loaders['sequential'][1]['val'])
             cosines_t1 = compute_direction_cosines(grads_t1, eigen_spectrum[1]['eigenvecs'])
             cosines_t2 = compute_direction_cosines(grads_t2, eigen_spectrum[2]['eigenvecs'])
+            cosines_t3 = compute_direction_cosines(grads_t3, eigen_spectrum[2]['eigenvecs'])
             print("cos 1 >> ", cosines_t1)
             print("cos 2 >> ", cosines_t2)
+            print("cos 3 >> ", cosines_t3)
             save_task_model_by_policy(mtl_model, task, 'mtl', config['exp_dir'])
 
             for prev_task in range(1, task+1):
