@@ -28,8 +28,8 @@ config = {
          'mlp_hiddens': HIDDENS, 'dropout': 0.0, 'lr_decay': 0.99, 'stable_sgd': False,\
 
           # ----Seq Model-----
-          'seq_lr': 0.1, 'seq_batch_size': 64, 'seq_epochs': 2,\
-          'lr_mtl': 0.1, 'epochs_mtl': 2, 'mtl_start_from_other_init': False,\
+          'seq_lr': 0.1, 'seq_batch_size': 64, 'seq_epochs': 5,\
+          'lr_mtl': 0.1, 'epochs_mtl': 5, 'mtl_start_from_other_init': False,\
 
           # ------LMC models------
           'lmc_policy': 'offline', 'lmc_interpolation': 'linear',\
@@ -96,14 +96,14 @@ def main():
             grads_t2 = get_model_grads(mtl_model, loaders['sequential'][2]['val'])
             grads_t3 = get_model_grads(seq_model, loaders['sequential'][2]['val'])
 
-            seq_1 = flatten_params(load_task_model_by_policy(1, 'seq', config['exp_dir']))
-            seq_2 = flatten_params(load_task_model_by_policy(2, 'seq', config['exp_dir']))
+            seq_1 = flatten_params(load_task_model_by_policy(1, 'seq', config['exp_dir']), False).cpu()
+            seq_2 = flatten_params(load_task_model_by_policy(2, 'seq', config['exp_dir']), False).cpu()
 
             cosines_t1 = compute_direction_cosines(grads_t1, eigen_spectrum[1]['eigenvecs'])
             cosines_t2 = compute_direction_cosines(grads_t2, eigen_spectrum[2]['eigenvecs'])
             cosines_t3 = compute_direction_cosines(grads_t3, eigen_spectrum[1]['eigenvecs'])
 
-            cosine_d1 = compute_direction_cosines(flatten_params(mtl)-seq_1, eigen_spectrum[1]['eigenvecs'])
+            cosine_d1 = compute_direction_cosines((flatten_params(mtl_model, False).cpu()-seq_1), eigen_spectrum[1]['eigenvecs'])
             cosine_d2 = compute_direction_cosines(seq_2-seq_1, eigen_spectrum[1]['eigenvecs'])
             print("cos 1 >> ", cosines_t1)
             print("cos 2 >> ", cosines_t2)
