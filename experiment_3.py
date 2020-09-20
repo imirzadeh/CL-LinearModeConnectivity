@@ -28,8 +28,8 @@ config = {
          'mlp_hiddens': HIDDENS, 'dropout': 0.0, 'lr_decay': 0.99, 'stable_sgd': False,\
 
           # ----Seq Model-----
-          'seq_lr': 0.1, 'seq_batch_size': 64, 'seq_epochs': 5,\
-          'lr_mtl': 0.1, 'epochs_mtl': 5, 'mtl_start_from_other_init': False,\
+          'seq_lr': 0.1, 'seq_batch_size': 64, 'seq_epochs': 2,\
+          'lr_mtl': 0.1, 'epochs_mtl': 2, 'mtl_start_from_other_init': False,\
 
           # ------LMC models------
           'lmc_policy': 'offline', 'lmc_interpolation': 'linear',\
@@ -59,7 +59,7 @@ def compute_direction_cosines(grads, eigenvecs):
 
 def main():
     print('Started the trial >>', TRIAL_ID, 'for experiment 1')
-    # init and save
+    # init and save9
     setup_experiment(experiment, config)
 
     # convention:  init      =>  initialization
@@ -94,7 +94,7 @@ def main():
             mtl_model = train_task_MTL(task, loaders['full-multitask'][task]['train'], config, loaders['sequential'][1]['val'])
             grads_t1 = get_model_grads(mtl_model, loaders['sequential'][1]['val'])
             grads_t2 = get_model_grads(mtl_model, loaders['sequential'][2]['val'])
-            grads_t3 = get_model_grads(seq_model, loaders['sequential'][1]['val'])
+            grads_t3 = get_model_grads(seq_model, loaders['sequential'][2]['val'])
             cosines_t1 = compute_direction_cosines(grads_t1, eigen_spectrum[1]['eigenvecs'])
             cosines_t2 = compute_direction_cosines(grads_t2, eigen_spectrum[2]['eigenvecs'])
             cosines_t3 = compute_direction_cosines(grads_t3, eigen_spectrum[1]['eigenvecs'])
