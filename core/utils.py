@@ -162,7 +162,7 @@ def get_model_eigenspectrum(model, loader):
     use_gpu = True if DEVICE != 'cpu' else False
 
     new_loader = []
-    for i in range(35):
+    for i in range(5):
         new_loader.append([loader[i][0], loader[i][1]])
 
     est_eigenvals, est_eigenvecs = compute_hessian_eigenthings(
@@ -170,7 +170,7 @@ def get_model_eigenspectrum(model, loader):
         new_loader,
         criterion,
         num_eigenthings=30,
-        power_iter_steps=100,
+        power_iter_steps=500,
         power_iter_err_threshold=1e-4,
         momentum=0,
         use_gpu=use_gpu,
