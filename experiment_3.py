@@ -23,17 +23,17 @@ EXP_DIR = './checkpoints/{}'.format(TRIAL_ID)
 
 config = {
          # ---COMMON----
-         'num_tasks': 2, 'per_task_rotation': 9, 'trial': TRIAL_ID, 'exp_dir': EXP_DIR,\
+         'num_tasks': 2, 'per_task_rotation': 22.5, 'trial': TRIAL_ID, 'exp_dir': EXP_DIR,\
          'memory_size': 200, 'dataset': DATASET, 'device': DEVICE, 'momentum': 0.8,\
-         'mlp_hiddens': HIDDENS, 'dropout': 0.1, 'lr_decay': 0.8, 'stable_sgd': False,\
+         'mlp_hiddens': HIDDENS, 'dropout': 0.1, 'lr_decay': 0.99, 'stable_sgd': False,\
 
           # ----Seq Model-----
-          'seq_lr': 0.1, 'seq_batch_size': 32, 'seq_epochs': 3,\
-          'lr_mtl': 0.1, 'epochs_mtl': 3, 'mtl_start_from_other_init': False,\
+          'seq_lr': 0.1, 'seq_batch_size': 64, 'seq_epochs': 5,\
+          'lr_mtl': 0.1, 'epochs_mtl': 5, 'mtl_start_from_other_init': False,\
 
           # ------LMC models------
           'lmc_policy': 'offline', 'lmc_interpolation': 'linear',\
-          'lmc_lr': 0.01, 'lmc_batch_size': 32, 'lcm_init_position': 0.5,\
+          'lmc_lr': 0.1, 'lmc_batch_size': 64, 'lcm_init_position': 0.5,\
           'lmc_line_samples': 5, 'lmc_epochs': 1,   
          }
 
