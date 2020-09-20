@@ -54,7 +54,7 @@ def compute_direction_cosines(grads, eigenvecs):
     cosines = []
     cos = torch.nn.CosineSimilarity(dim=0, eps=1e-6)
     for v in eigenvecs:
-        cosines.append(torch.abs(cos(grads.cpu(), torch.from_numpy(v))).item())
+        cosines.append(torch.abs(cos(-1.0*grads.cpu(), torch.from_numpy(v))).item())
     return cosines
 
 def main():
