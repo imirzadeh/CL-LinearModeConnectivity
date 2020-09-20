@@ -14,7 +14,7 @@ from core.visualization import plot_single_interpolation, plot_multi_interpolati
 from core.utils import get_model_grads, get_model_eigenspectrum
 
 DATASET = 'rot-mnist'
-HIDDENS = 100
+HIDDENS = 256
 DEVICE = 'cuda' if torch.cuda.is_available() else 'cpu'
 TRIAL_ID =  os.environ.get('NNI_TRIAL_JOB_ID', get_random_string(5))
 EXP_DIR = './checkpoints/{}'.format(TRIAL_ID)
@@ -28,8 +28,8 @@ config = {
          'mlp_hiddens': HIDDENS, 'dropout': 0.0, 'lr_decay': 0.99, 'stable_sgd': False,\
 
           # ----Seq Model-----
-          'seq_lr': 0.05, 'seq_batch_size': 64, 'seq_epochs': 15,\
-          'lr_mtl': 0.05, 'epochs_mtl': 5, 'mtl_start_from_other_init': False,\
+          'seq_lr': 0.1, 'seq_batch_size': 64, 'seq_epochs': 1,\
+          'lr_mtl': 0.1, 'epochs_mtl': 1, 'mtl_start_from_other_init': False,\
 
           # ------LMC models------
           'lmc_policy': 'offline', 'lmc_interpolation': 'linear',\
@@ -54,7 +54,7 @@ def compute_direction_cosines(grads, eigenvecs):
     cosines = []
     cos = torch.nn.CosineSimilarity(dim=0, eps=1e-6)
     for v in eigenvecs:
-        cosines.append(torch.abs(cos(-1.0*grads.cpu(), torch.from_numpy(v))).item())
+        cosines.append(round(torch.abs(cos(-1.0*grads.cpu(), torch.from_numpy(v))).item(), 3))
     return cosines
 
 def main():
@@ -92,9 +92,10 @@ def main():
 
             print('---- Task {} (mtl) ----'.format(task))
             mtl_model = train_task_MTL(task, loaders['full-multitask'][task]['train'], config, loaders['sequential'][1]['val'])
-            grads_t1 = get_model_grads(mtl_model, loaders['sequential'][1]['val'])
+            #grads_t1 = get_model_grads(mtl_model, loaders['sequential'][1]['val'])
             # grads_t2 = get_model_grads(mtl_model, loaders['sequential'][2]['val'])
-            grads_t3 = get_model_grads(load_task_model_by_policy(1, 'seq', config['exp_dir']).to(DEVICE), loaders['sequential'][2]['val'])
+            grads_t1 = get_model_grads(load_task_model_by_policy(1, 'seq', config['exp_dir']).to(DEVICE), loaders['full-multitask'][2]['train'])
+            grads_t3 = get_model_grads(load_task_model_by_policy(1, 'seq', config['exp_dir']).to(DEVICE), loaders['sequential'][2]['train'])
 
             seq_1 = flatten_params(load_task_model_by_policy(1, 'seq', config['exp_dir']), False).cpu()
             seq_2 = flatten_params(load_task_model_by_policy(2, 'seq', config['exp_dir']), False).cpu()

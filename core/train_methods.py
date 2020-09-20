@@ -49,6 +49,7 @@ def train_task_sequentially(task, train_loader, config):
     EXP_DIR = config['exp_dir']
     current_lr = max(0.0005, config['seq_lr'] * (config['lr_decay'])**(task-1))
     prev_model_name = 'init' if task == 1 else 't_{}_seq'.format(str(task-1))
+    factor = 5 if task == 1 else 1
     prev_model_path = '{}/{}.pth'.format(EXP_DIR, prev_model_name)
     model = load_model(prev_model_path).to(DEVICE)
     optimizer = torch.optim.SGD(model.parameters(), lr=current_lr, momentum=config['momentum'])
@@ -56,7 +57,7 @@ def train_task_sequentially(task, train_loader, config):
     # train_loader = loaders['sequential'][task]['train']
     
     #optimizer = torch.optim.SGD(model.parameters(), lr=config['seq_lr'], momentum=0.8)
-    for epoch in range(config['seq_epochs']):
+    for epoch in range(factor*config['seq_epochs']):
         model = train_single_epoch(model, optimizer, train_loader)
     return model
 
