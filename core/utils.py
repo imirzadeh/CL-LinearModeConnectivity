@@ -170,7 +170,7 @@ def get_model_eigenspectrum(model, loader):
         model,
         new_loader,
         criterion,
-        num_eigenthings=30,
+        num_eigenthings=50,
         power_iter_steps=500,
         power_iter_err_threshold=1e-4,
         momentum=0,
