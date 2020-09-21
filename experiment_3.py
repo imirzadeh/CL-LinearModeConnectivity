@@ -23,9 +23,9 @@ EXP_DIR = './checkpoints/{}'.format(TRIAL_ID)
 
 config = {
          # ---COMMON----
-         'num_tasks': 2, 'per_task_rotation': 45, 'trial': TRIAL_ID, 'exp_dir': EXP_DIR,\
+         'num_tasks': 2, 'per_task_rotation': 5, 'trial': TRIAL_ID, 'exp_dir': EXP_DIR,\
          'memory_size': 200, 'dataset': DATASET, 'device': DEVICE, 'momentum': 0.8,\
-         'mlp_hiddens': HIDDENS, 'dropout': 0.0, 'lr_decay': 0.99, 'stable_sgd': False,\
+         'mlp_hiddens': HIDDENS, 'dropout': 0.0, 'lr_decay': 1.0, 'stable_sgd': False,\
 
           # ----Seq Model-----
           'seq_lr': 0.1, 'seq_batch_size': 64, 'seq_epochs': 1,\
@@ -43,7 +43,7 @@ mtl_meter = ContinualMeter('mtl_accs', config['num_tasks'])
 config['trial'] = TRIAL_ID
 experiment = Experiment(api_key="1UNrcJdirU9MEY0RC3UCU7eAg", \
                         project_name="explore-eigens", \
-                        workspace="cl-modeconnectivity", disabled=True)
+                        workspace="cl-modeconnectivity", disabled=False)
     
 loaders = get_all_loaders(config['dataset'], config['num_tasks'],\
                          config['seq_batch_size'], config['seq_batch_size'],\
