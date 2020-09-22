@@ -48,6 +48,35 @@ def fast_cifar_loader(loaders, task_id, device='cpu'):
 
     return trains, evals
 
+
+def get_mnist(fashion, batch_size):
+    dataset_class = torchvision.datasets.FashionMNIST if fashion is True else torchvision.datasets.MNIST
+    transform = torchvision.transforms.ToTensor()
+    mnist_train = dataset_class('./data/', train=True, download=True, transform=transform)
+    mnist_test  = dataset_class('./data/', train=False, download=True, transform=transform)
+    train_loader = torch.utils.data.DataLoader(mnist_train, batch_size=batch_size, num_workers=4, pin_memory=True, shuffle=True)
+    test_loader  = torch.utils.data.DataLoader(mnist_test,  batch_size=512, shuffle=False, num_workers=4, pin_memory=True)
+    return train_loader, test_loader
+
+
+def get_multitask_generic_mnist(batch_size):
+    # num_examples_per_task = num_examples//num_tasks
+
+    trains = []
+    tests = []
+    all_mtl_data = {}
+
+    for task in range(1, 3):
+        all_mtl_data[task] = {}
+        fashion = True if task == 2 else False
+        train_loader, test_loader = fast_mnist_loader(get_mnist(fashion, batch_size))
+        trains += train_loader
+        tests += test_loader
+        all_mtl_data[task]['train'] = random.sample(trains[:], len(trains))
+        all_mtl_data[task]['val'] = tests[:]
+    return all_mtl_data
+
+
 def get_permuted_mnist(task_id, batch_size):
     idx_permute = permute_map[task_id]
     transforms = torchvision.transforms.Compose([torchvision.transforms.ToTensor(),
@@ -84,6 +113,7 @@ def get_subset_permuted_mnist(task_id, batch_size, num_examples):
     test_loader = torch.utils.data.DataLoader(test_datasets,  batch_size=256, shuffle=True, num_workers=4, pin_memory=True)
 
     return train_loader, test_loader
+
 
 def get_multitask_permuted_mnist(num_tasks, batch_size, num_examples):
     num_examples_per_task = num_examples//num_tasks
@@ -167,7 +197,6 @@ def get_multitask_rotated_mnist(num_tasks, batch_size, num_examples, per_task_ro
         tests += test_loader
         all_mtl_data[task]['train'] = random.sample(trains[:], len(trains))
         all_mtl_data[task]['val'] = tests[:]
-
 
     return all_mtl_data
 
@@ -278,9 +307,14 @@ def get_all_loaders(dataset, num_tasks, bs_inter, bs_intra, num_examples, per_ta
     loaders = {'sequential': {},  'multitask':  {}, 'subset': {}, 'full-multitask': {}}
 
     print('loading multitask {}'.format(dataset))
+
     if 'cifar' in dataset:
         loaders['multitask'] = get_multitask_cifar100_loaders(num_tasks, bs_inter, num_examples)
         loaders['full-multitask'] = get_multitask_cifar100_loaders(num_tasks, bs_inter, num_tasks*5*500)
+    elif 'fashion' in dataset:
+        loaders['multitask'] = []
+        loaders['full-multitask'] = get_multitask_generic_mnist(bs_inter)
+
     elif 'rot' in dataset and 'mnist' in dataset:
         loaders['multitask'] = get_multitask_rotated_mnist(num_tasks, bs_inter, num_examples, per_task_rotation)
         loaders['full-multitask'] = get_multitask_rotated_mnist(num_tasks, bs_inter, num_tasks*10*2000, per_task_rotation)
@@ -300,7 +334,12 @@ def get_all_loaders(dataset, num_tasks, bs_inter, bs_intra, num_examples, per_ta
     for task in range(1, num_tasks+1):
         loaders['sequential'][task], loaders['subset'][task] = {}, {}
         print("loading {} for task {}".format(dataset, task))
-        if 'rot' in dataset and 'mnist' in dataset:
+        if 'fashion' in dataset and 'mnist' in dataset:
+            assert task <= 2
+            fashion = True if task == 2 else False
+            seq_loader_train , seq_loader_val = fast_mnist_loader(get_mnist(fashion, bs_intra), 'cpu')
+            sub_loader_train , _ = [], []
+        elif 'rot' in dataset and 'mnist' in dataset:
             seq_loader_train , seq_loader_val = fast_mnist_loader(get_rotated_mnist(task, bs_intra, per_task_rotation), 'cpu')
             sub_loader_train , _ = fast_mnist_loader(get_subset_rotated_mnist(task, bs_inter, 2*num_examples, per_task_rotation),'cpu')
         elif 'perm' in dataset and 'mnist' in dataset:
@@ -309,13 +348,17 @@ def get_all_loaders(dataset, num_tasks, bs_inter, bs_intra, num_examples, per_ta
         elif 'cifar' in dataset:
             seq_loader_train , seq_loader_val = fast_cifar_loader(get_split_cifar100(task, bs_intra, cifar_train, cifar_test), task, 'cpu')
             sub_loader_train , _ = fast_cifar_loader(get_subset_split_cifar100(task, bs_inter, cifar_train, 5*num_examples), task, 'cpu')
+        
         loaders['sequential'][task]['train'], loaders['sequential'][task]['val'] = seq_loader_train, seq_loader_val
         loaders['subset'][task]['train'] = sub_loader_train
+
     return loaders
 
 
 
 # if __name__ == "__main__":
+    # loaders = get_mnist(fashion=True, batch_size=32)
+    # loaders = get_all_loaders('mnist-fashion', 2, 32, 32, 100)
 #     loaders = get_val_loaders_mnist(5)
 #     print(loaders.keys())
 #     print(len(loaders[1]))
