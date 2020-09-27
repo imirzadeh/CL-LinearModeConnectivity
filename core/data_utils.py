@@ -5,7 +5,7 @@ import torchvision
 from torch.utils.data import TensorDataset, DataLoader, Dataset, ConcatDataset
 from torch.utils.data.sampler import Sampler, RandomSampler
 import torchvision.transforms.functional as TorchVisionFunc
-from torchvision.datasets import MNIST
+from torchvision.datasets import MNIST, FashionMNIST
 from torch.utils.data.dataloader import default_collate
 
 import matplotlib
@@ -18,7 +18,39 @@ permute_map = {k:np.random.RandomState().permutation(784) for k in range(2, 51)}
 permute_map[1] = np.array(range(784))
 
 
-FASHION_MNIST_NOISE_STD = 1.25
+FASHION_MNIST_NOISE_STD = 0.00
+FASHION_MNIST_CORRUPT_PROB = 0.30
+
+class FashionMNISTCorrupt(FashionMNIST):
+  """Fashion dataset, with support for randomly corrupt labels.
+  Code borrowed from: https://github.com/pluskid/fitting-random-labels/blob/master/cifar10_data.py
+  Params
+  ------
+  corrupt_prob: float
+    Default 0.0. The probability of a label being replaced with
+    random label.
+  num_classes: int
+    Default 10. The number of classes in the dataset.
+  """
+  def __init__(self, corrupt_prob=FASHION_MNIST_CORRUPT_PROB, num_classes=10, **kwargs):
+    super(FashionMNISTCorrupt, self).__init__(**kwargs)
+    self.n_classes = num_classes
+    if corrupt_prob > 0:
+      self.corrupt_labels(corrupt_prob)
+
+  def corrupt_labels(self, corrupt_prob):
+    labels = np.array(self.targets)
+    np.random.seed(123456)
+    mask = np.random.rand(len(labels)) <= corrupt_prob
+    rnd_labels = np.random.choice(self.n_classes, mask.sum())
+    labels[mask] = rnd_labels
+    # we need to explicitly cast the labels from npy.int64 to
+    # builtin int type, otherwise pytorch will fail...
+    labels = [int(x) for x in labels]
+
+    self.targets = labels
+
+
 
 def fast_mnist_loader(loaders, device='cpu'):
     train_loader, eval_loader = loaders
@@ -65,7 +97,7 @@ class AddGaussianNoise(object):
 
 
 def get_mnist(fashion, batch_size, noise_std=0.0):
-    dataset_class = torchvision.datasets.FashionMNIST if fashion is True else torchvision.datasets.MNIST
+    dataset_class = FashionMNISTCorrupt if fashion is True else torchvision.datasets.MNIST
 
     if fashion is True and noise_std > 0.0:
         transform = torchvision.transforms.Compose([torchvision.transforms.ToTensor(),
@@ -76,8 +108,8 @@ def get_mnist(fashion, batch_size, noise_std=0.0):
                                                     torchvision.transforms.Normalize((0.5,), (0.5,))])
 
     # transform = torchvision.transforms.Compose([torchvision.transforms.ToTensor(),])
-    mnist_train = dataset_class('./data/', train=True, download=True, transform=transform)
-    mnist_test  = dataset_class('./data/', train=False, download=True, transform=transform)
+    mnist_train = dataset_class(root='./data/', train=True, download=True, transform=transform)
+    mnist_test  = dataset_class(root='./data/', train=False, download=True, transform=transform)
     train_loader = torch.utils.data.DataLoader(mnist_train, batch_size=batch_size, num_workers=4, pin_memory=True, shuffle=True)
     test_loader  = torch.utils.data.DataLoader(mnist_test,  batch_size=512, shuffle=False, num_workers=4, pin_memory=True)
     return train_loader, test_loader
@@ -89,10 +121,10 @@ def get_subset_mnist(fashion, batch_size, num_examples):
     
     transform = torchvision.transforms.Compose([torchvision.transforms.ToTensor(),  torchvision.transforms.Normalize((0.5,), (0.5,))])
 
-    dataset_class = torchvision.datasets.FashionMNIST if fashion is True else torchvision.datasets.MNIST
+    dataset_class = FashionMNISTCorrupt if fashion is True else torchvision.datasets.MNIST
 
-    mnist_train = dataset_class('./data/', train=True, download=True, transform=transform)
-    mnist_test  = dataset_class('./data/', train=False, download=True, transform=transform)
+    mnist_train = dataset_class(root='./data/', train=True, download=True, transform=transform)
+    mnist_test  = dataset_class(root='./data/', train=False, download=True, transform=transform)
     idx = mnist_train.targets < 10
     mnist_train.targets = mnist_train.targets[idx]
     mnist_train.data = mnist_train.data[idx.numpy().astype(np.bool)]
