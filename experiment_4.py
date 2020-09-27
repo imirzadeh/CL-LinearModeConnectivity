@@ -28,8 +28,8 @@ config = {
          'mlp_hiddens': HIDDENS, 'dropout': 0.0, 'lr_decay': 1.0, 'stable_sgd': False,\
 
           # ----Seq Model-----
-          'seq_lr': 0.012, 'seq_batch_size': 64, 'seq_epochs': 2,\
-          'lr_mtl': 0.012, 'epochs_mtl': 2, 'mtl_start_from_other_init': False,\
+          'seq_lr': 0.05, 'seq_batch_size': 64, 'seq_epochs': 2,\
+          'lr_mtl': 0.05, 'epochs_mtl': 2, 'mtl_start_from_other_init': False,\
 
           # ------LMC models------
           'lmc_policy': 'offline', 'lmc_interpolation': 'linear',\
