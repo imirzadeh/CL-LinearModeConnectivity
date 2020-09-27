@@ -198,9 +198,9 @@ def plot_contour(grid, values, coords, vmax=None, log_alpha=-5, N=7, path='defau
         clevels = [1.2, 1.3, 1.4, 1.5, 1.6, 1.7, 1.8, 1.9, 2.0, 2.25, 2.5, 3.0, 10e10]
         norm = matplotlib.colors.Normalize(1.0, 2.2)
     elif 'mnist' in dataset:
-        levels = [0.0, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0, 1.2, 1.4, 1.6, 1.8, 2.0, 10e10]
-        clevels =  levels[1:]
-        norm = matplotlib.colors.Normalize(0.1, 1.5)
+        levels = [0.0, 0.2, 0.5, 1.0, 1.5, 2.0, 3.0, 4.0, 10e10]
+        clevels =  levels[1:]   
+        norm = matplotlib.colors.Normalize(0.0, 4.5)
     else:
         levels = 10
         clevels = 10
