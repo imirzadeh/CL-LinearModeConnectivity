@@ -6,7 +6,7 @@ from torch.utils.data import TensorDataset, DataLoader, Dataset, ConcatDataset
 from torch.utils.data.sampler import Sampler, RandomSampler
 import torchvision.transforms.functional as TorchVisionFunc
 from torchvision.datasets import MNIST
-
+from torch.utils.data.dataloader import default_collate
 
 import matplotlib
 matplotlib.use('Agg')
@@ -16,6 +16,9 @@ import matplotlib.pyplot as plt
 # global permutation map for this run
 permute_map = {k:np.random.RandomState().permutation(784) for k in range(2, 51)}
 permute_map[1] = np.array(range(784))
+
+
+FASHION_MNIST_NOISE_STD = 1.25
 
 def fast_mnist_loader(loaders, device='cpu'):
     train_loader, eval_loader = loaders
@@ -49,15 +52,57 @@ def fast_cifar_loader(loaders, task_id, device='cpu'):
     return trains, evals
 
 
-def get_mnist(fashion, batch_size):
+class AddGaussianNoise(object):
+    def __init__(self, mean=0., std=1.):
+        self.std = std
+        self.mean = mean
+        
+    def __call__(self, tensor):
+        return tensor + torch.randn(tensor.size()) * self.std + self.mean
+    
+    def __repr__(self):
+        return self.__class__.__name__ + '(mean={0}, std={1})'.format(self.mean, self.std)
+
+
+def get_mnist(fashion, batch_size, noise_std=0.0):
     dataset_class = torchvision.datasets.FashionMNIST if fashion is True else torchvision.datasets.MNIST
-    transform = torchvision.transforms.ToTensor()
+
+    if fashion is True and noise_std > 0.0:
+        transform = torchvision.transforms.Compose([torchvision.transforms.ToTensor(),
+                                                    torchvision.transforms.Normalize((0.5,), (0.5,)),
+                                                    AddGaussianNoise(noise_std, 1.0)])
+    else:
+        transform = torchvision.transforms.Compose([torchvision.transforms.ToTensor(),
+                                                    torchvision.transforms.Normalize((0.5,), (0.5,))])
+
+    # transform = torchvision.transforms.Compose([torchvision.transforms.ToTensor(),])
     mnist_train = dataset_class('./data/', train=True, download=True, transform=transform)
     mnist_test  = dataset_class('./data/', train=False, download=True, transform=transform)
     train_loader = torch.utils.data.DataLoader(mnist_train, batch_size=batch_size, num_workers=4, pin_memory=True, shuffle=True)
     test_loader  = torch.utils.data.DataLoader(mnist_test,  batch_size=512, shuffle=False, num_workers=4, pin_memory=True)
     return train_loader, test_loader
 
+
+def get_subset_mnist(fashion, batch_size, num_examples):
+    trains = []
+    tests = []
+    
+    transform = torchvision.transforms.Compose([torchvision.transforms.ToTensor(),  torchvision.transforms.Normalize((0.5,), (0.5,))])
+
+    dataset_class = torchvision.datasets.FashionMNIST if fashion is True else torchvision.datasets.MNIST
+
+    mnist_train = dataset_class('./data/', train=True, download=True, transform=transform)
+    mnist_test  = dataset_class('./data/', train=False, download=True, transform=transform)
+    idx = mnist_train.targets < 10
+    mnist_train.targets = mnist_train.targets[idx]
+    mnist_train.data = mnist_train.data[idx.numpy().astype(np.bool)]
+    # num_examples = num_examples_per_task * num_tasks
+    sampler = torch.utils.data.RandomSampler(mnist_train, replacement=True, num_samples=num_examples)
+
+    train_loader = torch.utils.data.DataLoader(mnist_train,  batch_size=batch_size, sampler=sampler, shuffle=False, num_workers=8, pin_memory=True)
+    test_loader = torch.utils.data.DataLoader(mnist_test,  batch_size=256, shuffle=True, num_workers=4, pin_memory=True)
+
+    return train_loader, test_loader
 
 def get_multitask_generic_mnist(batch_size):
     # num_examples_per_task = num_examples//num_tasks
@@ -68,8 +113,15 @@ def get_multitask_generic_mnist(batch_size):
 
     for task in range(1, 3):
         all_mtl_data[task] = {}
-        fashion = True if task == 2 else False
-        train_loader, test_loader = fast_mnist_loader(get_mnist(fashion, batch_size))
+        # fashion = True if task == 2 else False
+        # train_loader, test_loader = fast_mnist_loader(get_mnist(fashion, batch_size))
+        if task == 1:
+            # Task 1 => Incomplete MNIST
+            train_loader, test_loader = fast_mnist_loader(get_subset_mnist(False, batch_size, 10000))
+        else:
+            # task 2 => Fashion MNIST
+            train_loader, test_loader = fast_mnist_loader(get_mnist(True, batch_size, FASHION_MNIST_NOISE_STD))
+
         trains += train_loader
         tests += test_loader
         all_mtl_data[task]['train'] = random.sample(trains[:], len(trains))
@@ -337,7 +389,7 @@ def get_all_loaders(dataset, num_tasks, bs_inter, bs_intra, num_examples, per_ta
         if 'fashion' in dataset and 'mnist' in dataset:
             assert task <= 2
             fashion = True if task == 2 else False
-            seq_loader_train , seq_loader_val = fast_mnist_loader(get_mnist(fashion, bs_intra), 'cpu')
+            seq_loader_train , seq_loader_val = fast_mnist_loader(get_mnist(fashion, bs_intra, FASHION_MNIST_NOISE_STD), 'cpu')
             sub_loader_train , _ = [], []
         elif 'rot' in dataset and 'mnist' in dataset:
             seq_loader_train , seq_loader_val = fast_mnist_loader(get_rotated_mnist(task, bs_intra, per_task_rotation), 'cpu')
@@ -357,6 +409,8 @@ def get_all_loaders(dataset, num_tasks, bs_inter, bs_intra, num_examples, per_ta
 
 
 # if __name__ == "__main__":
+    # train = get_multitask_generic_mnist(32)[2]['train']
+    # print(len(train), len(train[0][0]), len(train[0][1]))
     # loaders = get_mnist(fashion=True, batch_size=32)
     # loaders = get_all_loaders('mnist-fashion', 2, 32, 32, 100)
 #     loaders = get_val_loaders_mnist(5)
@@ -372,15 +426,16 @@ def get_all_loaders(dataset, num_tasks, bs_inter, bs_intra, num_examples, per_ta
 #         print("count >> ", count)
 
     # train = get_rotated_mnist_tasks(5, 100)[3]['train']
-    # num_row = 5
-    # num_col = 5
+    # num_row = 10
+    # num_col = 2
    
-#   data, taget = next(iter(train))
-#   fig, axes = plt.subplots(num_row, num_col, figsize=(1.5*num_col,2*num_row))
-#   for i in range(25):
-#       ax = axes[i//num_row, i%num_col]
-#       ax.imshow(data[i].numpy()[0], cmap='gray')
-#       ax.set_title('Task: {}'.format(3))
-#   plt.tight_layout()
-#   plt.savefig('datasets.png', dpi=300)
+    # # data, taget = next(iter(train))
+    # data = train
+    # fig, axes = plt.subplots(num_row, num_col, figsize=(1.5*num_col,2*num_row))
+    # for i in range(25):
+    #     ax = axes[i//num_row, i%num_col]
+    #     ax.imshow(data[i].numpy().reshape(28, 28), cmap='gray')
+    #     # ax.set_title('Task: {}'.format(3))
+    # plt.tight_layout()
+    # plt.savefig('datasets.png', dpi=300)
 
