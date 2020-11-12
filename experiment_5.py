@@ -6,7 +6,7 @@ import numpy as np
 import pandas as pd
 from core.data_utils import get_all_loaders
 from core.cka_utils import calculate_CKA
-from core.train_methods import train_task_sequentially, train_task_LMC_offline, eval_single_epoch
+from core.train_methods import train_task_sequentially_w_memory, train_task_LMC_offline, eval_single_epoch
 from core.utils import save_np_arrays, setup_experiment, log_comet_metric, get_random_string
 from core.utils import save_task_model_by_policy, load_task_model_by_policy, flatten_params
 from core.utils import assign_weights, get_norm_distance, ContinualMeter, load_model
@@ -191,9 +191,7 @@ def main():
     nni_metric = 0
     for task in range(1, config['num_tasks']+1):
         print('---- Task {} (seq) ----'.format(task))
-        seq_model = train_task_sequentially(task, loaders['sequential'][task]['train'], config)
-        if task > 1:
-            seq_model = train_task_sequentially(task, loaders['multitask'][task]['train'], config)
+        seq_model = train_task_sequentially_w_memory(task, loaders['sequential'][task]['train'], loaders['multitask'][task]['train'], config)
         save_task_model_by_policy(seq_model, task, 'seq', config['exp_dir'])
         avg_accs = []
         for prev_task in range(1, task+1):
