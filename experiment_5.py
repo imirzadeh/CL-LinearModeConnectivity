@@ -22,7 +22,7 @@ EXP_DIR = './checkpoints/{}'.format(TRIAL_ID)
 
 config = {
          # ---COMMON----
-         'num_tasks': 3, 'per_task_rotation': 9, 'trial': TRIAL_ID, 'exp_dir': EXP_DIR,\
+         'num_tasks': 20, 'per_task_rotation': 9, 'trial': TRIAL_ID, 'exp_dir': EXP_DIR,\
          'memory_size': 200, 'dataset': DATASET, 'device': DEVICE, 'momentum': 0.8,\
          'mlp_hiddens': HIDDENS, 'dropout': 0.2, 'lr_decay': 0.7, 'stable_sgd': False,\
 
@@ -140,7 +140,9 @@ def plot_graphs(config):
     # plot_mode_connections_for_minima('seq', 1, config, 2)
     # plot_mode_connections_for_minima('seq', 1, config, 3)
     # plot_mode_connections_for_minima('seq', 2, config)
-    plot_mode_connections_for_minima('seq', 2, config)
+    plot_mode_connections_for_minima('seq', 5, config)
+    plot_mode_connections_for_minima('seq', 10, config)
+    plot_mode_connections_for_minima('seq', 15, config)
     # plot_mode_connections_for_minima('seq', 10, config)
     # plot_mode_connections_for_minima('seq', 2, config, 3)
 
@@ -204,6 +206,7 @@ def main():
             log_comet_metric(experiment, 't_{}_seq_loss'.format(prev_task), round(metrics['loss'], 5), task)
 
         log_comet_metric(experiment, 'avg_acc', np.mean(avg_accs), task)
+        print("Avg acc >> ", np.mean(avg_accs))
 
         # if task > 1:
         #     accs_lmc, losses_lmc = [], []
