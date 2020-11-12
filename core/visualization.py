@@ -65,7 +65,7 @@ def plot_multi_interpolations(x, ys, y_labels, path):
     # plt.title(title)
     plt.legend(title='Paths', title_fontsize=19, ncol=2, loc='upper left', handletextpad=0.5, handlelength=1.0, columnspacing=1.0)
     # plt.ylim((0.0, 0.005))
-    plt.yticks([0, 1, 2, 3, 4, 5])
+    # plt.yticks([0, 1, 2, 3, 4, 5])
     plt.tight_layout()
     plt.savefig(path+".png", dpi=200)
     plt.savefig(path+".pdf", dpi=200)

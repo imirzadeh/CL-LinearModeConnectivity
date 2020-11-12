@@ -49,7 +49,7 @@ def train_task_sequentially(task, train_loader, config):
     EXP_DIR = config['exp_dir']
     current_lr = max(0.0005, config['seq_lr'] * (config['lr_decay'])**(task-1))
     prev_model_name = 'init' if task == 1 else 't_{}_seq'.format(str(task-1))
-    factor = 5 if task == 1 else 1
+    factor = 2 if task == 1 else 1
     prev_model_path = '{}/{}.pth'.format(EXP_DIR, prev_model_name)
     model = load_model(prev_model_path).to(DEVICE)
     optimizer = torch.optim.SGD(model.parameters(), lr=current_lr, momentum=config['momentum'])
@@ -105,9 +105,6 @@ def train_task_LMC_offline(task, loaders, config):
                     grads = get_line_loss(w_curr, flatten_params(model_lmc), [[data, target, task_id]], config)
             model_lmc = assign_grads(model_lmc, grads).to(DEVICE)
             optimizer.step()
-
-                 
-
         # for data, target, task_id in loader_prev:
         #     model_lmc.train()
         #     optimizer.zero_grad()
