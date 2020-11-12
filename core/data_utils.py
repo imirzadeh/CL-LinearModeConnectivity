@@ -394,17 +394,17 @@ def get_all_loaders(dataset, num_tasks, bs_inter, bs_intra, num_examples, per_ta
 
     if 'cifar' in dataset:
         loaders['multitask'] = get_multitask_cifar100_loaders(num_tasks, bs_inter, num_examples)
-        loaders['full-multitask'] = get_multitask_cifar100_loaders(num_tasks, bs_inter, num_tasks*5*500)
+        # loaders['full-multitask'] = get_multitask_cifar100_loaders(num_tasks, bs_inter, num_tasks*5*500)
     elif 'fashion' in dataset:
         loaders['multitask'] = []
-        loaders['full-multitask'] = get_multitask_generic_mnist(bs_inter)
+        # loaders['full-multitask'] = get_multitask_generic_mnist(bs_inter)
 
     elif 'rot' in dataset and 'mnist' in dataset:
         loaders['multitask'] = get_multitask_rotated_mnist(num_tasks, bs_inter, num_examples, per_task_rotation)
-        loaders['full-multitask'] = get_multitask_rotated_mnist(num_tasks, bs_inter, num_tasks*10*2000, per_task_rotation)
+        # loaders['full-multitask'] = get_multitask_rotated_mnist(num_tasks, bs_inter, num_tasks*10*2000, per_task_rotation)
     elif 'perm' in dataset and 'mnist' in dataset:
         loaders['multitask'] = get_multitask_permuted_mnist(num_tasks, bs_inter, num_examples)
-        loaders['full-multitask'] = get_multitask_permuted_mnist(num_tasks, bs_inter, num_tasks*10*2000)
+        # loaders['full-multitask'] = get_multitask_permuted_mnist(num_tasks, bs_inter, num_tasks*10*2000)
     else:
         raise Exception("{} not implemented!".format(dataset))
 
